@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>違う色を探せ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>違う色を探せ</h1>
+    <p>たくさんの中に一つだけ違う色があります。見つけてクリックしてください。</p>
+
+    <div class="info-bar">
+        <div id="stage-display">ステージ: 1</div>
+        <div id="timer-display">時間: 30</div>
+    </div>
+
+    <div id="game-board">
+        <!-- ここにJavaScriptで図形が追加されます -->
+    </div>
+
+    <!-- ゲームオーバー時に表示するモーダル -->
+    <div id="result-modal" class="hidden">
+        <div class="modal-content">
+            <h2 id="result-title"></h2>
+            <p id="result-message"></p>
+            <button id="retry-button">もう一度挑戦する</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
