@@ -1,5 +1,9 @@
 :root {
     --tile-size: 30px; /* マスのサイズを変数で管理 */
+    
+    /* ステージの色をここで定義（デフォルト値） */
+    --color-empty: #7294a0;
+    --color-path:  #7f9d92;
 }
 
 body {
@@ -11,10 +15,12 @@ body {
     margin: 0;
     background-color: #333;
     color: white;
+    -webkit-tap-highlight-color: transparent; /* スマホタップ時のハイライトを消す */
 }
 
 .game-wrapper {
     text-align: center;
+    padding: 10px;
 }
 
 #game-container {
@@ -33,8 +39,8 @@ body {
 }
 
 /* --- 色の設計（ここが最重要） --- */
-.tile-empty { background-color: #7294a0; } /* 背景・落下マス (くすんだ青) */
-.tile-path  { background-color: #7f9d92; } /* 足場 (くすんだ青緑) */
+.tile-empty { background-color: var(--color-empty); }
+.tile-path  { background-color: var(--color-path); }
 .tile-start { background-color: #ffdd57; } /* スタート (黄色) */
 .tile-goal  { background-color: #ff3860; } /* ゴール (赤色) */
 
@@ -68,6 +74,7 @@ body {
     color: white;
     border-radius: 8px;
     cursor: pointer;
+    user-select: none; /* ボタンのテキスト選択を無効に */
 }
 .arrow-btn:active {
     background-color: #777;
