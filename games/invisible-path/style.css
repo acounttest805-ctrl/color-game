@@ -27,6 +27,7 @@ body {
     position: relative; /* プレイヤーの位置の基準点にする */
     margin: 1em auto;
     border: 3px solid #eee;
+    display: inline-block; /* ★変更点：中身のサイズに自動で合わせる */
 }
 
 #game-board {
@@ -46,6 +47,8 @@ body {
 
 #player {
     position: absolute;
+    top: 0;  /* ★変更点：初期位置を左上隅に固定 */
+    left: 0; /* ★変更点：初期位置を左上隅に固定 */
     width: calc(var(--tile-size) * 0.8);
     height: calc(var(--tile-size) * 0.8);
     background-color: #fff;
