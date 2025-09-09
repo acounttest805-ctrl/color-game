@@ -44,6 +44,10 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     cursor: grab;
     transition: transform 0.2s, box-shadow 0.2s;
+
+    user-select: none; /* テキスト選択を無効化 */
+    -webkit-user-select: none; /* Safari用 */
+    -webkit-touch-callout: none; /* 長押しメニューを無効化 */
 }
 .color-chip:active {
     cursor: grabbing;
