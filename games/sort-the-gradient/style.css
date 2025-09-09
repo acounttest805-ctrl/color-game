@@ -71,6 +71,16 @@ body {
     background-color: #0056b3;
 }
 
+#next-stage-button {
+    background-color: #28a745; /* 緑色 */
+    color: white;
+    border-color: #28a745;
+}
+#next-stage-button:hover {
+    background-color: #218838;
+    border-color: #218838;
+}
+
 /* --- モーダル表示用のスタイル (既存のものを流用) --- */
 .hidden { display: none !important; }
 
