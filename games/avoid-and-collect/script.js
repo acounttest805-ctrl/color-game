@@ -166,6 +166,13 @@ function handleCollision(obj) {
 function handleStageClear() {
     gameState.totalScore += gameState.score;
     gameState.currentStage++;
+
+    // ★修正点：画面上のすべてのオブジェクトを削除する
+    for (const obj of gameState.objects) {
+        obj.element.remove();
+    }
+    gameState.objects = []; // オブジェクト配列も空にする
+
     if (gameState.currentStage >= stages.length) {
         allStagesCleared();
     } else {
