@@ -1,0 +1,160 @@
+:root {
+    --game-bg-color: #ffffff;
+    --ui-bg-color: #1a1a1a;
+    --player-color: #000000;
+    --control-bg-color: #888888;
+    --control-fg-color: #ffffff;
+}
+
+body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--ui-bg-color);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#game-wrapper {
+    width: 100%;
+    max-width: 480px;
+    height: 100%;
+    max-height: 800px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+#ui-overlay {
+    background-color: var(--ui-bg-color);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+#life-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+#life-icons {
+    color: #ff3860;
+}
+
+#game-screen {
+    flex-grow: 1;
+    background-color: var(--game-bg-color);
+    position: relative;
+    overflow: hidden;
+}
+
+#player {
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 25px solid var(--player-color);
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: left 0.1s linear;
+}
+
+.object {
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.feedback-cross {
+    position: absolute;
+    font-size: 50px;
+    color: #ff3860;
+    font-weight: bold;
+    animation: fade-out 0.6s forwards;
+    pointer-events: none;
+}
+
+@keyframes fade-out {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(1.5); }
+}
+
+
+#progress-bar-container {
+    position: absolute;
+    right: 5px;
+    top: 10px;
+    bottom: 10px;
+    width: 8px;
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 4px;
+}
+#progress-bar {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background-color: #28a745;
+    border-radius: 4px;
+    transition: height 0.1s linear;
+}
+
+
+#controls {
+    background-color: var(--ui-bg-color);
+    display: flex;
+    justify-content: space-around;
+    padding: 15px 0;
+}
+
+#controls button {
+    width: 60px;
+    height: 60px;
+    font-size: 2em;
+    border: none;
+    border-radius: 10px;
+    background-color: var(--control-bg-color);
+    color: var(--control-fg-color);
+    cursor: pointer;
+}
+
+/* Modal Styles */
+.hidden { display: none !important; }
+#result-modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex; justify-content: center; align-items: center; z-index: 100;
+}
+.modal-content {
+    background-color: #fff; padding: 2em; border-radius: 8px;
+    max-width: 90%; width: 400px; color: #333; text-align: center;
+}
+.modal-buttons {
+    display: flex; justify-content: center; gap: 1em; margin-top: 1.5em;
+}
+.modal-buttons button, .home-button-modal {
+    padding: 0.8em 1.5em; border-radius: 5px; border: 1px solid #888;
+    background-color: #f0f0f0; color: #333; font-size: 1em;
+    cursor: pointer; text-decoration: none;
+}
+.home-button-modal { background-color: #6c757d; color: white; border-color: #6c757d; }
+
+/* スマホ用レイアウト調整 */
+@media (max-width: 480px) {
+    #game-wrapper {
+        max-height: none;
+    }
+    #ui-overlay { font-size: 1em; padding: 10px; }
+    #controls button { width: 50px; height: 50px; font-size: 1.5em; }
+}

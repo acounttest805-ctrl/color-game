@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Avoid & Collect</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div id="game-wrapper">
+        <!-- UIオーバーレイ -->
+        <div id="ui-overlay">
+            <div id="life-container">
+                <span id="life-icons"></span>
+                <span id="life-count">5</span>
+            </div>
+            <div id="score-container">
+                スコア: <span id="score-value">0</span>
+            </div>
+        </div>
+
+        <!-- ゲームスクリーン -->
+        <div id="game-screen">
+            <div id="player"></div>
+            <div id="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+        </div>
+
+        <!-- 操作ボタン -->
+        <div id="controls">
+            <button id="btn-left">◀</button>
+            <button id="btn-right">▶</button>
+        </div>
+    </div>
+
+    <!-- 結果表示モーダル -->
+    <div id="result-modal" class="hidden">
+        <div class="modal-content">
+            <h2 id="result-title"></h2>
+            <p id="result-message"></p>
+            <div class="modal-buttons">
+                <button id="retry-button">もう一度挑戦</button>
+                <a href="../../index.html" class="home-button-modal">ホームに戻る</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>
