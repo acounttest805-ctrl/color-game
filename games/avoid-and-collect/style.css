@@ -127,6 +127,7 @@ body {
     background-color: var(--control-bg-color);
     color: var(--control-fg-color);
     cursor: pointer;
+    touch-action: manipulation; /* ★★★修正点★★★ */
 }
 
 /* Modal Styles */
