@@ -11,7 +11,7 @@ const stages = [
 
 let currentStage = 1;
 let correctOrder = [];
-let reversedCorrectOrder = []; // ★追加：逆順の正解を保存する配列
+let reversedCorrectOrder = [];
 
 // --- HTML要素の取得 ---
 const stageTitle = document.getElementById('stage-title');
@@ -46,7 +46,7 @@ function setupStage(stageNum) {
     
     const stageData = stages[stageNum];
     correctOrder = generateGradient(stageData.start, stageData.end, stageData.count);
-    reversedCorrectOrder = [...correctOrder].reverse(); // ★追加：逆順の正解配列を作成
+    reversedCorrectOrder = [...correctOrder].reverse();
     
     const shuffledOrder = [...correctOrder];
     shuffleArray(shuffledOrder);
@@ -64,17 +64,112 @@ function setupStage(stageNum) {
 }
 
 // --- ドラッグ＆ドロップイベントリスナー設定 ---
-// (この関数の中身は変更なし)
-function addDragDropListeners() { /* ... */ }
-function getDragAfterElement(container, x) { /* ... */ }
+function addDragDropListeners() {
+    const chips = document.querySelectorAll('.color-chip');
+    let draggedItem = null;
+
+    chips.forEach(chip => {
+        // --- PCのマウス操作用 ---
+        chip.addEventListener('dragstart', () => {
+            draggedItem = chip;
+            setTimeout(() => chip.classList.add('dragging'), 0);
+        });
+
+        chip.addEventListener('dragend', () => {
+            if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+                draggedItem = null; // ★★★ この1行を追加 ★★★
+            }
+        });
+
+        // --- スマホのタッチ操作用 ---
+        chip.addEventListener('touchstart', (e) => {
+            draggedItem = e.target;
+            draggedItem.classList.add('dragging');
+        }, { passive: false });
+
+        chip.addEventListener('touchend', () => {
+            if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+                draggedItem = null;
+            }
+        });
+    });
+
+    // --- 共通の移動処理 ---
+    chipContainer.addEventListener('dragover', e => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(chipContainer, e.clientX);
+        if (draggedItem) {
+            if (afterElement == null) {
+                chipContainer.appendChild(draggedItem);
+            } else {
+                chipContainer.insertBefore(draggedItem, afterElement);
+            }
+        }
+    });
+
+    chipContainer.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (draggedItem) {
+            const x = e.touches[0].clientX;
+            const afterElement = getDragAfterElement(chipContainer, x);
+            if (afterElement == null) {
+                chipContainer.appendChild(draggedItem);
+            } else {
+                chipContainer.insertBefore(draggedItem, afterElement);
+            }
+        }
+    }, { passive: false });
+}
+
+function getDragAfterElement(container, x) {
+    const draggableElements = [...container.querySelectorAll('.color-chip:not(.dragging)')];
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = x - box.left - box.width / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
 
 // --- 「答えを見る」機能 ---
-// (この関数の中身は変更なし)
-function showAnswer() { /* ... */ }
+function showAnswer() {
+    message.textContent = '正解は、この並びです。';
+    chipContainer.innerHTML = ''; 
+
+    correctOrder.forEach(color => {
+        const chip = document.createElement('div');
+        chip.className = 'color-chip';
+        chip.style.backgroundColor = color;
+        chip.draggable = false;
+        chip.style.cursor = 'default';
+        chipContainer.appendChild(chip);
+    });
+
+    if (currentStage >= stages.length - 1) {
+        showAnswerButton.classList.add('hidden');
+        checkButton.classList.add('hidden');
+        setTimeout(() => {
+            resultTitle.textContent = 'ゲーム終了';
+            resultMessage.textContent = 'お疲れ様でした！このゲームが、ご自身の色の見え方について知るきっかけになれば幸いです。';
+            resultModal.classList.remove('hidden');
+        }, 2000);
+    } else {
+        updateButtonVisibility('answer_shown');
+    }
+}
 
 // --- 「次のステージへ」ボタンの処理 ---
-// (この関数の中身は変更なし)
-function goToNextStage() { /* ... */ }
+function goToNextStage() {
+    currentStage++;
+    if (currentStage < stages.length) {
+        setupStage(currentStage);
+    }
+}
 
 // --- 正解判定処理 ---
 function checkAnswer() {
@@ -82,7 +177,6 @@ function checkAnswer() {
     if (currentChips.length === 0) return;
     const currentOrder = currentChips.map(chip => rgbToHex(chip.style.backgroundColor));
     
-    // ★変更：順方向と逆方向の両方で正解をチェック
     const isCorrectForward = currentOrder.every((color, i) => color === correctOrder[i]);
     const isCorrectBackward = currentOrder.every((color, i) => color === reversedCorrectOrder[i]);
 
@@ -102,11 +196,13 @@ function checkAnswer() {
 }
 
 // --- ゲーム開始/リスタート処理 ---
-// (この関数の中身は変更なし)
-function startGame() { /* ... */ }
+function startGame() {
+    resultModal.classList.add('hidden');
+    currentStage = 1;
+    setupStage(currentStage);
+}
 
 // --- イベントリスナー ---
-// (この部分は変更なし)
 checkButton.addEventListener('click', checkAnswer);
 showAnswerButton.addEventListener('click', showAnswer);
 nextStageButton.addEventListener('click', goToNextStage);
@@ -116,43 +212,7 @@ retryButton.addEventListener('click', startGame);
 startGame();
 
 
-// --- ここから下は変更のないヘルパー関数群です (省略せずにすべてペーストしてください) ---
-function showAnswer() {
-    message.textContent = '正解は、この並びです。';
-    chipContainer.innerHTML = ''; 
-
-    correctOrder.forEach(color => {
-        const chip = document.createElement('div');
-        chip.className = 'color-chip';
-        chip.style.backgroundColor = color;
-        chip.draggable = false;
-        chip.style.cursor = 'default';
-        chipContainer.appendChild(chip);
-    });
-
-    if (currentStage >= stages.length - 1) { // 最終ステージの場合
-        showAnswerButton.classList.add('hidden');
-        checkButton.classList.add('hidden');
-        setTimeout(() => {
-            resultTitle.textContent = 'ゲーム終了';
-            resultMessage.textContent = 'お疲れ様でした！このゲームが、ご自身の色の見え方について知るきっかけになれば幸いです。';
-            resultModal.classList.remove('hidden');
-        }, 2000);
-    } else { // 最終ステージ以外の場合
-        updateButtonVisibility('answer_shown');
-    }
-}
-function goToNextStage() {
-    currentStage++;
-    if (currentStage < stages.length) {
-        setupStage(currentStage);
-    }
-}
-function startGame() {
-    resultModal.classList.add('hidden');
-    currentStage = 1;
-    setupStage(currentStage);
-}
+// --- ここから下は変更のないヘルパー関数群です ---
 function rgbToHex(rgb) {
     if (!rgb) return '';
     if (rgb.startsWith('#')) return rgb;
@@ -181,24 +241,4 @@ function shuffleArray(array) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
-}
-function addDragDropListeners() {
-    const chips = document.querySelectorAll('.color-chip');
-    let draggedItem = null;
-    chips.forEach(chip => {
-        chip.addEventListener('dragstart', () => { draggedItem = chip; setTimeout(() => chip.classList.add('dragging'), 0); });
-        chip.addEventListener('dragend', () => { if (draggedItem) draggedItem.classList.remove('dragging'); });
-        chip.addEventListener('touchstart', (e) => { draggedItem = e.target; draggedItem.classList.add('dragging'); }, { passive: false });
-        chip.addEventListener('touchend', () => { if (draggedItem) { draggedItem.classList.remove('dragging'); draggedItem = null; } });
-    });
-    chipContainer.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(chipContainer, e.clientX); if (draggedItem) { if (afterElement == null) { chipContainer.appendChild(draggedItem); } else { chipContainer.insertBefore(draggedItem, afterElement); } } });
-    chipContainer.addEventListener('touchmove', e => { e.preventDefault(); if (draggedItem) { const x = e.touches[0].clientX; const afterElement = getDragAfterElement(chipContainer, x); if (afterElement == null) { chipContainer.appendChild(draggedItem); } else { chipContainer.insertBefore(draggedItem, afterElement); } } }, { passive: false });
-}
-function getDragAfterElement(container, x) {
-    const draggableElements = [...container.querySelectorAll('.color-chip:not(.dragging)')];
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = x - box.left - box.width / 2;
-        if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } else { return closest; }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
