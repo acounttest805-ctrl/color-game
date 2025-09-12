@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ブロックの色を揃えろ！</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div id="game-wrapper">
+        <header>
+            <h1>ブロックの色を揃えろ！</h1>
+            <h2 id="stage-title">ステージ 1</h2>
+        </header>
+        
+        <main id="boards-container">
+            <div class="board-area">
+                <h3>見本</h3>
+                <div id="sample-board" class="grid-container"></div>
+            </div>
+            <div class="board-area">
+                <h3>あなた</h3>
+                <div id="user-board" class="grid-container"></div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>ブロックをクリックすると色が変わります。</p>
+        </footer>
+    </div>
+
+    <!-- 結果表示モーダル -->
+    <div id="result-modal" class="hidden">
+        <div class="modal-content">
+            <h2 id="result-title"></h2>
+            <div class="modal-buttons">
+                <button id="next-stage-button">次のステージへ</button>
+                <a href="../../index.html" class="home-button-modal">ホームに戻る</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>
