@@ -1,12 +1,43 @@
 // --- Stage Data ---
 const stages = [
-    null,
-    { rows: 11, cols: 8, colors: { base: '#3465a4', highlight: '#a9cce3' }, pattern: [ [0,1,1,1,1,1,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,0,0,0,0,1,0,0],[0,0,0,0,1,0,0,0],[0,0,0,1,0,0,0,0],[0,0,1,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,1,1,1,1,1,0], ] },
-    { rows: 11, cols: 8, colors: { base: '#8f7b66', highlight: '#a18a72' }, pattern: [ [0,0,1,1,1,1,0,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,1,1,1,1,0,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,0,1,1,1,1,0,0],[0,0,0,0,0,0,0,0], ] },
-    { rows: 11, cols: 10, colors: { base: '#7f9d92', highlight: '#7294a0' }, pattern: [ [0,0,0,0,0,0,0,0,0,0],[0,0,1,1,0,0,1,1,0,0],[0,0,1,1,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,1,0,0,0,0,0,0,1,0],[0,0,1,0,0,0,0,1,0,0],[0,0,0,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] },
-    { rows: 11, cols: 10, colors: { base: '#d3b8ae', highlight: '#c7aca1' }, pattern: [ [0,0,0,0,1,1,0,0,0,0],[0,0,0,1,1,0,0,0,0,0],[0,0,1,1,1,1,1,1,0,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,0,1,1,1,1,1,1,0,0],[0,0,0,1,1,1,1,0,0,0],[0,0,0,0,1,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] },
-    { rows: 12, cols: 10, colors: { base: '#555555', highlight: '#6a6a6a' }, pattern: [ [0,0,0,0,0,0,0,0,0,0],[0,1,1,1,0,0,1,1,1,0],[0,0,1,0,0,0,0,1,0,0],[0,0,1,0,1,1,1,1,1,0],[0,0,1,0,0,0,0,1,0,0],[0,1,1,1,0,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,1,1,0,0,0],[0,1,0,0,0,0,0,1,0,0],[0,1,0,0,0,0,0,1,0,0],[0,0,1,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] },
-    { rows: 11, cols: 11, colors: { base: '#808A70', highlight: '#9A7C70' }, pattern: 'random' }
+    null, // stages[1]から
+    { // ステージ1
+        rows: 11, cols: 8, colors: { base: '#3465a4', highlight: '#a9cce3' }, 
+        pattern: [ [0,1,1,1,1,1,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,0,0,0,0,1,0,0],[0,0,0,0,1,0,0,0],[0,0,0,1,0,0,0,0],[0,0,1,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,1,1,1,1,1,0], ] 
+    },
+    { // ステージ2
+        rows: 11, cols: 8, colors: { base: '#8f7b66', highlight: '#a18a72' }, 
+        pattern: [ [0,0,1,1,1,1,0,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,1,1,1,1,0,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,0,1,1,1,1,0,0],[0,0,0,0,0,0,0,0], ] 
+    },
+    { // ステージ3
+        rows: 11, cols: 10, colors: { base: '#7f9d92', highlight: '#7294a0' }, 
+        pattern: [ [0,0,0,0,0,0,0,0,0,0],[0,0,1,1,0,0,1,1,0,0],[0,0,1,1,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,1,0,0,0,0,0,0,1,0],[0,0,1,0,0,0,0,1,0,0],[0,0,0,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] 
+    },
+    { // ステージ4
+        rows: 11, cols: 10, colors: { base: '#d3b8ae', highlight: '#c7aca1' }, 
+        pattern: [ [0,0,0,0,1,1,0,0,0,0],[0,0,0,1,1,0,0,0,0,0],[0,0,1,1,1,1,1,1,0,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,0,1,1,1,1,1,1,0,0],[0,0,0,1,1,1,1,0,0,0],[0,0,0,0,1,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] 
+    },
+    { // ★ステージ5: 新しいパターン「色」に変更
+        rows: 12, cols: 10, colors: { base: '#555555', highlight: '#6a6a6a' }, 
+        pattern: [
+            [0,0,0,0,0,0,0,0,0,0],
+            [0,1,1,1,0,0,1,1,1,0],
+            [0,0,1,0,0,0,0,1,0,0],
+            [0,0,1,0,1,1,1,1,1,0],
+            [0,0,1,0,0,0,0,1,0,0],
+            [0,1,1,1,0,1,1,1,0,0],
+            [0,0,0,0,0,0,0,0,0,0],
+            [0,0,1,1,1,1,1,0,0,0],
+            [0,1,0,0,0,0,0,1,0,0],
+            [0,1,0,0,0,0,0,1,0,0],
+            [0,0,1,1,1,1,1,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0]
+        ] 
+    },
+    { // ステージ6
+        rows: 11, cols: 11, colors: { base: '#808A70', highlight: '#9A7C70' }, 
+        pattern: 'random'
+    }
 ];
 
 // --- Elements ---
@@ -21,7 +52,7 @@ const skipButton = document.getElementById('skip-button');
 let currentStage = 1;
 let currentPattern = [];
 let isDragging = false;
-let toggledCellsInDrag = new Set(); // ★なぞり操作改善のためのSet
+let toggledCellsInDrag = new Set();
 
 // --- Functions ---
 function setupStage(stageNum) {
@@ -43,6 +74,13 @@ function setupStage(stageNum) {
     const root = document.documentElement;
     root.style.setProperty('--base-color', stageData.colors.base);
     root.style.setProperty('--highlight-color', stageData.colors.highlight);
+
+    // ★追加：ステージ5のみブロックの間隔を広げる
+    if (stageNum === 5) {
+        root.style.setProperty('--grid-gap', '5px');
+    } else {
+        root.style.setProperty('--grid-gap', '2px'); // 他のステージは元に戻す
+    }
 
     createBoard(sampleBoard, stageData, false);
     createBoard(userBoard, stageData, true);
@@ -89,7 +127,7 @@ function createBoard(container, stageData, isUserBoard) {
 function handleDragStart(event) {
     event.preventDefault();
     isDragging = true;
-    toggledCellsInDrag.clear(); // ★改善: ドラッグ開始時にリセット
+    toggledCellsInDrag.clear();
     toggleCellColor(event.target);
 }
 
@@ -114,7 +152,7 @@ window.addEventListener('mouseup', () => isDragging = false);
 window.addEventListener('touchend', () => isDragging = false);
 
 function toggleCellColor(cell) {
-    if (!cell || toggledCellsInDrag.has(cell)) return; // ★改善: Setでチェック
+    if (!cell || toggledCellsInDrag.has(cell)) return;
 
     const currentState = parseInt(cell.dataset.state, 10);
     const newState = 1 - currentState;
@@ -122,7 +160,7 @@ function toggleCellColor(cell) {
     cell.dataset.state = newState;
     cell.style.backgroundColor = newState === 1 ? 'var(--highlight-color)' : 'var(--base-color)';
     
-    toggledCellsInDrag.add(cell); // ★改善: 処理済みセルをSetに追加
+    toggledCellsInDrag.add(cell);
 
     checkWinCondition();
 }
