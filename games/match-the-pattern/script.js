@@ -1,5 +1,13 @@
 // --- Stage Data ---
-const stages = [ /* ... (変更なし) ... */ ];
+const stages = [
+    null,
+    { rows: 11, cols: 8, colors: { base: '#3465a4', highlight: '#a9cce3' }, pattern: [ [0,1,1,1,1,1,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,0,0,0,0,1,0,0],[0,0,0,0,1,0,0,0],[0,0,0,1,0,0,0,0],[0,0,1,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,1,1,1,1,1,0], ] },
+    { rows: 11, cols: 8, colors: { base: '#8f7b66', highlight: '#a18a72' }, pattern: [ [0,0,1,1,1,1,0,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,1,1,1,1,0,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,0,1,1,1,1,0,0],[0,0,0,0,0,0,0,0], ] },
+    { rows: 11, cols: 10, colors: { base: '#7f9d92', highlight: '#7294a0' }, pattern: [ [0,0,0,0,0,0,0,0,0,0],[0,0,1,1,0,0,1,1,0,0],[0,0,1,1,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,1,0,0,0,0,0,0,1,0],[0,0,1,0,0,0,0,1,0,0],[0,0,0,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] },
+    { rows: 11, cols: 10, colors: { base: '#d3b8ae', highlight: '#c7aca1' }, pattern: [ [0,0,0,0,1,1,0,0,0,0],[0,0,0,1,1,0,0,0,0,0],[0,0,1,1,1,1,1,1,0,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,0,1,1,1,1,1,1,0,0],[0,0,0,1,1,1,1,0,0,0],[0,0,0,0,1,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] },
+    { rows: 12, cols: 10, colors: { base: '#555555', highlight: '#6a6a6a' }, pattern: [ [0,0,0,0,0,0,0,0,0,0],[0,1,1,1,0,0,1,1,1,0],[0,0,1,0,0,0,0,1,0,0],[0,0,1,0,1,1,1,1,1,0],[0,0,1,0,0,0,0,1,0,0],[0,1,1,1,0,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,1,1,0,0,0],[0,1,0,0,0,0,0,1,0,0],[0,1,0,0,0,0,0,1,0,0],[0,0,1,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] },
+    { rows: 11, cols: 11, colors: { base: '#808A70', highlight: '#9A7C70' }, pattern: 'random' }
+];
 
 // --- Elements ---
 const sampleBoard = document.getElementById('sample-board');
@@ -8,18 +16,18 @@ const stageTitle = document.getElementById('stage-title');
 const resultModal = document.getElementById('result-modal');
 const resultTitle = document.getElementById('result-title');
 const nextStageButton = document.getElementById('next-stage-button');
-const skipButton = document.getElementById('skip-button'); // ★追加
+const skipButton = document.getElementById('skip-button');
 
 let currentStage = 1;
 let currentPattern = [];
-let isDragging = false; // ★追加：ドラッグ中かどうかのフラグ
+let isDragging = false;
+let toggledCellsInDrag = new Set(); // ★なぞり操作改善のためのSet
 
 // --- Functions ---
 function setupStage(stageNum) {
     const stageData = stages[stageNum];
     stageTitle.textContent = `ステージ ${stageNum}`;
     
-    // ★スキップボタンの表示/非表示を制御
     if (stageNum >= 1 && stageNum <= 5) {
         skipButton.style.display = 'inline-block';
     } else {
@@ -64,10 +72,8 @@ function createBoard(container, stageData, isUserBoard) {
         
         if (isUserBoard) {
             cell.dataset.state = 0;
-            // ★★★ なぞり操作（ドラッグ）対応のためのイベントリスナー変更 ★★★
             cell.addEventListener('mousedown', handleDragStart);
             cell.addEventListener('mouseenter', handleDragEnter);
-            // スマホ用のタッチイベント
             cell.addEventListener('touchstart', handleDragStart, { passive: false });
             cell.addEventListener('touchmove', handleTouchMove, { passive: false });
         } else {
@@ -83,7 +89,8 @@ function createBoard(container, stageData, isUserBoard) {
 function handleDragStart(event) {
     event.preventDefault();
     isDragging = true;
-    toggleCellColor(event.target); // 最初にクリックしたセルも色を変える
+    toggledCellsInDrag.clear(); // ★改善: ドラッグ開始時にリセット
+    toggleCellColor(event.target);
 }
 
 function handleDragEnter(event) {
@@ -96,7 +103,6 @@ function handleTouchMove(event) {
     event.preventDefault();
     if (isDragging) {
         const touch = event.touches[0];
-        // 指の位置にある要素を取得
         const element = document.elementFromPoint(touch.clientX, touch.clientY);
         if (element && element.classList.contains('grid-cell')) {
             toggleCellColor(element);
@@ -104,14 +110,11 @@ function handleTouchMove(event) {
     }
 }
 
-// ドラッグ終了を検知するために、より広い範囲(window)にリスナーを設定
 window.addEventListener('mouseup', () => isDragging = false);
 window.addEventListener('touchend', () => isDragging = false);
 
-
 function toggleCellColor(cell) {
-    // 既に処理済みのセルを再度処理しないようにする（任意）
-    if (cell.isToggledInDrag) return;
+    if (!cell || toggledCellsInDrag.has(cell)) return; // ★改善: Setでチェック
 
     const currentState = parseInt(cell.dataset.state, 10);
     const newState = 1 - currentState;
@@ -119,12 +122,8 @@ function toggleCellColor(cell) {
     cell.dataset.state = newState;
     cell.style.backgroundColor = newState === 1 ? 'var(--highlight-color)' : 'var(--base-color)';
     
-    // ドラッグ中に同じセルを何度も反転させないためのフラグ
-    cell.isToggledInDrag = true;
-    setTimeout(() => { delete cell.isToggledInDrag; }, 100);
+    toggledCellsInDrag.add(cell); // ★改善: 処理済みセルをSetに追加
 
-    // 色を変えた直後に毎回チェックすると重くなる可能性があるので、
-    // ドラッグ終了時にチェックするなど最適化も可能ですが、まずはこの実装で。
     checkWinCondition();
 }
 
@@ -149,7 +148,6 @@ function checkWinCondition() {
 }
 
 function skipStage() {
-    // 念のため最終ステージではスキップできないようにする
     if (currentStage < stages.length - 1) {
         currentStage++;
         setupStage(currentStage);
@@ -167,19 +165,7 @@ function goToNextStage() {
 
 // --- Event Listeners ---
 nextStageButton.addEventListener('click', goToNextStage);
-skipButton.addEventListener('click', skipStage); // ★追加
+skipButton.addEventListener('click', skipStage);
 
 // --- Initial Start ---
 setupStage(currentStage);
-
-
-// --- Stage Data (変更なし) ---
-const stages = [
-    null,
-    { rows: 11, cols: 8, colors: { base: '#3465a4', highlight: '#a9cce3' }, pattern: [ [0,1,1,1,1,1,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,0,0,0,0,1,0,0],[0,0,0,0,1,0,0,0],[0,0,0,1,0,0,0,0],[0,0,1,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,1,1,1,1,1,0], ] },
-    { rows: 11, cols: 8, colors: { base: '#8f7b66', highlight: '#a18a72' }, pattern: [ [0,0,1,1,1,1,0,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,1,1,1,1,1,0,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,1,0,0,0,0,1,0],[0,0,1,1,1,1,0,0],[0,0,0,0,0,0,0,0], ] },
-    { rows: 11, cols: 10, colors: { base: '#7f9d92', highlight: '#7294a0' }, pattern: [ [0,0,0,0,0,0,0,0,0,0],[0,0,1,1,0,0,1,1,0,0],[0,0,1,1,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,1,0,0,0,0,0,0,1,0],[0,0,1,0,0,0,0,1,0,0],[0,0,0,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] },
-    { rows: 11, cols: 10, colors: { base: '#d3b8ae', highlight: '#c7aca1' }, pattern: [ [0,0,0,0,1,1,0,0,0,0],[0,0,0,1,1,0,0,0,0,0],[0,0,1,1,1,1,1,1,0,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,0,1,1,1,1,1,1,0,0],[0,0,0,1,1,1,1,0,0,0],[0,0,0,0,1,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] },
-    { rows: 12, cols: 10, colors: { base: '#555555', highlight: '#6a6a6a' }, pattern: [ [0,0,0,0,0,0,0,0,0,0],[0,1,1,1,0,0,1,1,1,0],[0,0,1,0,0,0,0,1,0,0],[0,0,1,0,1,1,1,1,1,0],[0,0,1,0,0,0,0,1,0,0],[0,1,1,1,0,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,1,1,0,0,0],[0,1,0,0,0,0,0,1,0,0],[0,1,0,0,0,0,0,1,0,0],[0,0,1,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0], ] },
-    { rows: 11, cols: 11, colors: { base: '#808A70', highlight: '#9A7C70' }, pattern: 'random' }
-];
