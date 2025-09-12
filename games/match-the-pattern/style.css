@@ -89,3 +89,26 @@ header h2 { margin: 0.5em 0; color: #666; }
 @media (max-width: 480px) {
     :root { --cell-size: 18px; }
 }
+
+/* フッターボタンのスタイル */
+.footer-buttons {
+    margin-top: 1em;
+    display: flex;
+    justify-content: center;
+    gap: 1em;
+}
+
+.footer-btn {
+    display: inline-block;
+    padding: 0.6em 1.2em;
+    border: 1px solid #ccc;
+    background-color: #f8f9fa;
+    color: #333;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+.footer-btn:hover {
+    background-color: #e2e6ea;
+}
