@@ -17,7 +17,7 @@ const stages = [
         rows: 11, cols: 10, colors: { base: '#d3b8ae', highlight: '#c7aca1' },
         pattern: [ [0,0,0,0,1,1,0,0,0,0],[0,0,0,1,1,0,0,0,0,0],[0,0,1,1,1,1,1,1,0,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,0,1,1,1,1,1,1,0,0],[0,0,0,1,1,1,1,0,0,0],[0,0,0,0,1,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0], ]
     },
-    { // ★★★ ステージ5: ご提示いただいた正しい「色」のパターンに修正 ★★★
+    { // ステージ5
         rows: 12, cols: 10, colors: { base: '#555555', highlight: '#6a6a6a' },
         pattern: [
             [0,0,0,0,0,0,0,0,0,0],
@@ -200,4 +200,8 @@ function goToNextStage() {
 }
 
 // --- Event Listeners ---
-nextStageBu
+nextStageButton.addEventListener('click', goToNextStage);
+skipButton.addEventListener('click', skipStage);
+
+// --- Initial Start ---
+setupStage(currentStage);
