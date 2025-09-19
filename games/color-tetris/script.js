@@ -18,7 +18,8 @@ let lastTime = 0;
 let startTime = 0;
 const DROP_INTERVAL = 700;
 
-const blockColors = ['#e74c3c', '#2ecc71', '#3498db'];
+// ★★★ 変更点 ★★★
+const blockColors = ['#e74c3c', '#2ecc71', '#3498db', '#f1c40f', '#9b59b6']; // Red, Green, Blue, Yellow, Purple
 
 const blockShapes = [
     { shape: [[1, 1, 1, 1]] },      // I型
@@ -167,9 +168,7 @@ function checkCollision() {
     return false;
 }
 
-// ★★★ ここからが消去ロジック (根本的に修正) ★★★
 function placeBlock() {
-    // 1. 今回固定されるブロックの座標リストを作成
     const placedCoords = [];
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
@@ -179,21 +178,15 @@ function placeBlock() {
         });
     });
 
-    // 2. 消去チェックを実行
-    // チェックするのは「既に盤面にあったブロック」との隣接面だけなので、
-    // ブロックを盤面に書き込む「前」にチェックを行う。
     const toClear = checkBlocksToClear(placedCoords, currentBlock.color);
 
-    // 3. ブロックを盤面に固定する
     placedCoords.forEach(coord => {
-        // 消去対象で「ない」ブロックのみを盤面に書き込む
         const isClearing = toClear.some(c => c.x === coord.x && c.y === coord.y);
         if (!isClearing) {
             board[coord.y][coord.x] = currentBlock.color;
         }
     });
 
-    // 4. 浮いたブロックを落とす
     if (toClear.length > 0) {
         dropFloatingBlocks();
     }
@@ -201,15 +194,10 @@ function placeBlock() {
 
 function checkBlocksToClear(coords, color) {
     const toClear = [];
-
-    // 固定されるブロックの各パーツについて、消去条件をチェック
     coords.forEach(coord => {
         const { x, y } = coord;
-        
-        // ★★★ 修正の核心 ★★★
-        // 隣接面をカウントする際に、今回置かれたブロックの他のパーツを除外する
+        if (!isValid(x, y)) return;
         const { sameColorFaces, differentColorFaces } = countAdjacentFaces(x, y, color, coords);
-
         if (sameColorFaces > differentColorFaces) {
             toClear.push({ x, y });
         }
@@ -221,18 +209,15 @@ function countAdjacentFaces(x, y, myColor, placedCoords) {
     let sameColorFaces = 0;
     let differentColorFaces = 0;
     
-    // 上下左右の4方向をチェック
     [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
         const nx = x + dx;
         const ny = y + dy;
 
-        // ★チェック対象の隣のマスが「今回置かれたブロックの一部」なら、カウントしない
         const isPartOfPlacedBlock = placedCoords.some(c => c.x === nx && c.y === ny);
         if (isPartOfPlacedBlock) {
-            return; // continue
+            return;
         }
 
-        // 隣のマスが盤面内で、かつ空でない（＝既に固定されていたブロック）場合
         if (isValid(nx, ny) && board[ny][nx] !== 0) {
             if (board[ny][nx] === myColor) {
                 sameColorFaces++;
