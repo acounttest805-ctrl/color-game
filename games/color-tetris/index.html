@@ -7,12 +7,17 @@
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
+    <!-- ↓↓↓ このブロックを追加 ↓↓↓ -->
+    <div id="info-bar">
+        <span>Time: <span id="time-display">0</span>s</span>
+    </div>
+    <!-- ↑↑↑ ここまで ↑↑↑ -->
+    
     <div id="game-container">
-        <!-- ゲームボードはCanvasで描画します -->
         <canvas id="game-board"></canvas>
     </div>
 
-    <!-- 操作ボタン -->
+    <!-- ... (操作ボタンはそのまま) ... -->
     <div id="controls">
         <button id="btn-left">◀</button>
         <button id="btn-down">▼</button>
