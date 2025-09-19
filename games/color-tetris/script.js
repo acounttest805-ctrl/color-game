@@ -148,9 +148,8 @@ function checkCollision() {
     return false;
 }
 
-// ★★★ ここからが新しいグループ消去ロジック ★★★
+// ★★★ ここからが修正されたグループ消去ロジック ★★★
 function placeBlock() {
-    // 1. ブロックを盤面に固定する
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
@@ -159,7 +158,6 @@ function placeBlock() {
         });
     });
 
-    // 2. 固定されたブロックの各パーツからグループ探索を開始
     const placedCoords = [];
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
@@ -169,8 +167,10 @@ function placeBlock() {
         });
     });
 
-    // 3. グループを見つけて、条件を満たせば消去
-    const groupsToClear = findGroupsToClear(placedCoords);
+    // ★修正点: ブロックを置くたびに、新しいvisited Setを渡して探索する
+    const visited = new Set();
+    const groupsToClear = findGroupsToClear(placedCoords, visited);
+
     if (groupsToClear.length > 0) {
         groupsToClear.forEach(group => {
             group.forEach(coord => {
@@ -181,19 +181,20 @@ function placeBlock() {
     }
 }
 
-function findGroupsToClear(startCoords) {
+function findGroupsToClear(startCoords, visited) {
     const groupsToClear = [];
-    const visited = new Set(); // 探索済みのセルを記録
 
     startCoords.forEach(startCoord => {
         const coordStr = `${startCoord.x},${startCoord.y}`;
-        if (visited.has(coordStr)) return; // 既に他のグループの一部として探索済みならスキップ
+        if (visited.has(coordStr)) return;
 
-        // 1. グループを見つける (BFSアルゴリズム)
         const group = [];
         const queue = [startCoord];
         visited.add(coordStr);
         const groupColor = board[startCoord.y][startCoord.x];
+        
+        // 色が設定されていない（既に消去済みなど）場合は探索しない
+        if (!groupColor) return;
 
         while (queue.length > 0) {
             const current = queue.shift();
@@ -209,10 +210,8 @@ function findGroupsToClear(startCoords) {
             });
         }
 
-        // 2. グループ全体の隣接面をカウント
         const { sameColorFaces, differentColorFaces } = countGroupFaces(group, groupColor);
         
-        // 3. 消去条件を判定
         if (sameColorFaces > differentColorFaces) {
             groupsToClear.push(group);
         }
@@ -230,7 +229,6 @@ function countGroupFaces(group, groupColor) {
             const neighbor = { x: cell.x + dx, y: cell.y + dy };
             const neighborStr = `${neighbor.x},${neighbor.y}`;
 
-            // 隣がグループ内部のセルの場合はカウントしない
             if (groupCoords.has(neighborStr)) return;
 
             if (isValid(neighbor.x, neighbor.y) && board[neighbor.y][neighbor.x] !== 0) {
