@@ -18,14 +18,18 @@ let lastTime = 0;
 let startTime = 0;
 const DROP_INTERVAL = 700;
 
+// ★追加: 3色のカラーパレットを定義
+const blockColors = ['#e74c3c', '#2ecc71', '#3498db']; // Flat UI: Red, Green, Blue
+
+// ★変更: ブロック定義から色情報を削除し、形だけに専念させる
 const blockShapes = [
-    { shape: [[1, 1, 1, 1]], color: 'cyan' },      // I型
-    { shape: [[1, 1], [1, 1]], color: 'yellow' }, // O型
-    { shape: [[0, 1, 1], [1, 1, 0]], color: 'green' },   // S型
-    { shape: [[1, 1, 0], [0, 1, 1]], color: 'red' },     // Z型
-    { shape: [[1, 0, 0], [1, 1, 1]], color: 'orange' },  // L型
-    { shape: [[0, 0, 1], [1, 1, 1]], color: 'blue' },    // J型
-    { shape: [[0, 1, 0], [1, 1, 1]], color: 'purple' }   // T型
+    { shape: [[1, 1, 1, 1]] },      // I型
+    { shape: [[1, 1], [1, 1]] }, // O型
+    { shape: [[0, 1, 1], [1, 1, 0]] },   // S型
+    { shape: [[1, 1, 0], [0, 1, 1]] },     // Z型
+    { shape: [[1, 0, 0], [1, 1, 1]] },  // L型
+    { shape: [[0, 0, 1], [1, 1, 1]] },    // J型
+    { shape: [[0, 1, 0], [1, 1, 1]] }   // T型
 ];
 
 // --- Game Functions ---
@@ -34,12 +38,18 @@ function createEmptyBoard() {
 }
 
 function spawnNewBlock() {
-    const randomIndex = Math.floor(Math.random() * blockShapes.length);
-    const shapeData = blockShapes[randomIndex];
+    // ★変更: 形と色を別々にランダムで選ぶ
+    // 1. ランダムな形を選ぶ
+    const shapeIndex = Math.floor(Math.random() * blockShapes.length);
+    const shapeData = blockShapes[shapeIndex];
+
+    // 2. ランダムな色を選ぶ
+    const colorIndex = Math.floor(Math.random() * blockColors.length);
+    const randomColor = blockColors[colorIndex];
     
     currentBlock = {
         shape: shapeData.shape,
-        color: shapeData.color,
+        color: randomColor, // 選ばれたランダムな色を適用
         x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
         y: 0
     };
@@ -167,16 +177,16 @@ document.addEventListener('keydown', event => {
         moveBlockSide(-1);
     } else if (event.key === 'ArrowRight') {
         moveBlockSide(1);
-    } else if (event.key === 'ArrowDown') { // ★変更：下矢印キーは1マス降下
+    } else if (event.key === 'ArrowDown') {
         moveBlockDown();
-    } else if (event.key === 'ArrowUp') {   // ★追加：上矢印キーで即落下
+    } else if (event.key === 'ArrowUp') {
         hardDrop();
     }
 });
 
 document.getElementById('btn-left').addEventListener('click', () => moveBlockSide(-1));
 document.getElementById('btn-right').addEventListener('click', () => moveBlockSide(1));
-document.getElementById('btn-down').addEventListener('click', () => hardDrop()); // 画面ボタンは即落下のまま
+document.getElementById('btn-down').addEventListener('click', () => hardDrop());
 
 // --- Initial Start ---
 spawnNewBlock();
