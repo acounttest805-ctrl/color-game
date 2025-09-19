@@ -18,8 +18,7 @@ let lastTime = 0;
 let startTime = 0;
 const DROP_INTERVAL = 700;
 
-// ★★★ 変更点 ★★★
-const blockColors = ['#e74c3c', '#2ecc71', '#3498db', '#f1c40f', '#9b59b6']; // Red, Green, Blue, Yellow, Purple
+const blockColors = ['#e74c3c', '#2ecc71', '#3498db', '#f1c40f', '#9b59b6'];
 
 const blockShapes = [
     { shape: [[1, 1, 1, 1]] },      // I型
@@ -39,17 +38,13 @@ function createEmptyBoard() {
 function spawnNewBlock() {
     const shapeIndex = Math.floor(Math.random() * blockShapes.length);
     const shapeData = blockShapes[shapeIndex];
-
     const colorIndex = Math.floor(Math.random() * blockColors.length);
     const randomColor = blockColors[colorIndex];
-    
     currentBlock = {
-        shape: shapeData.shape,
-        color: randomColor,
+        shape: shapeData.shape, color: randomColor,
         x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
         y: 0
     };
-
     if (checkCollision()) {
         alert("ゲームオーバー！");
         board = createEmptyBoard();
@@ -60,7 +55,6 @@ function spawnNewBlock() {
 function draw() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     board.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
@@ -69,17 +63,12 @@ function draw() {
             }
         });
     });
-
     if (currentBlock) {
         ctx.fillStyle = currentBlock.color;
         currentBlock.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value !== 0) {
-                    ctx.fillRect(
-                        (currentBlock.x + x) * CELL_SIZE,
-                        (currentBlock.y + y) * CELL_SIZE,
-                        CELL_SIZE - 1, CELL_SIZE - 1
-                    );
+                    ctx.fillRect((currentBlock.x + x) * CELL_SIZE, (currentBlock.y + y) * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
                 }
             });
         });
@@ -90,15 +79,10 @@ function update(time = 0) {
     if (startTime === 0) startTime = time;
     const deltaTime = time - lastTime;
     lastTime = time;
-    
     const elapsedTime = Math.floor((time - startTime) / 1000);
     timeDisplay.textContent = elapsedTime;
-
     dropCounter += deltaTime;
-    if (dropCounter > DROP_INTERVAL) {
-        moveBlockDown();
-    }
-    
+    if (dropCounter > DROP_INTERVAL) moveBlockDown();
     draw();
     requestAnimationFrame(update);
 }
@@ -109,8 +93,8 @@ function rotateBlock(dir) {
     const originalX = currentBlock.x;
     const shape = currentBlock.shape;
     const newShape = shape[0].map((_, colIndex) => shape.map(row => row[colIndex]));
-    if (dir > 0) { newShape.forEach(row => row.reverse()); }
-    else { newShape.reverse(); }
+    if (dir > 0) newShape.forEach(row => row.reverse());
+    else newShape.reverse();
     currentBlock.shape = newShape;
     let offset = 1;
     while (checkCollision()) {
@@ -138,16 +122,12 @@ function moveBlockDown() {
 function moveBlockSide(dir) {
     if (!currentBlock) return;
     currentBlock.x += dir;
-    if (checkCollision()) {
-        currentBlock.x -= dir;
-    }
+    if (checkCollision()) currentBlock.x -= dir;
 }
 
 function hardDrop() {
     if (!currentBlock) return;
-    while (!checkCollision()) {
-        currentBlock.y++;
-    }
+    while (!checkCollision()) currentBlock.y++;
     currentBlock.y--;
     placeBlock();
     spawnNewBlock();
@@ -168,7 +148,18 @@ function checkCollision() {
     return false;
 }
 
+// ★★★ ここからが新しいグループ消去ロジック ★★★
 function placeBlock() {
+    // 1. ブロックを盤面に固定する
+    currentBlock.shape.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                board[currentBlock.y + y][currentBlock.x + x] = currentBlock.color;
+            }
+        });
+    });
+
+    // 2. 固定されたブロックの各パーツからグループ探索を開始
     const placedCoords = [];
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
@@ -178,53 +169,78 @@ function placeBlock() {
         });
     });
 
-    const toClear = checkBlocksToClear(placedCoords, currentBlock.color);
-
-    placedCoords.forEach(coord => {
-        const isClearing = toClear.some(c => c.x === coord.x && c.y === coord.y);
-        if (!isClearing) {
-            board[coord.y][coord.x] = currentBlock.color;
-        }
-    });
-
-    if (toClear.length > 0) {
+    // 3. グループを見つけて、条件を満たせば消去
+    const groupsToClear = findGroupsToClear(placedCoords);
+    if (groupsToClear.length > 0) {
+        groupsToClear.forEach(group => {
+            group.forEach(coord => {
+                board[coord.y][coord.x] = 0;
+            });
+        });
         dropFloatingBlocks();
     }
 }
 
-function checkBlocksToClear(coords, color) {
-    const toClear = [];
-    coords.forEach(coord => {
-        const { x, y } = coord;
-        if (!isValid(x, y)) return;
-        const { sameColorFaces, differentColorFaces } = countAdjacentFaces(x, y, color, coords);
+function findGroupsToClear(startCoords) {
+    const groupsToClear = [];
+    const visited = new Set(); // 探索済みのセルを記録
+
+    startCoords.forEach(startCoord => {
+        const coordStr = `${startCoord.x},${startCoord.y}`;
+        if (visited.has(coordStr)) return; // 既に他のグループの一部として探索済みならスキップ
+
+        // 1. グループを見つける (BFSアルゴリズム)
+        const group = [];
+        const queue = [startCoord];
+        visited.add(coordStr);
+        const groupColor = board[startCoord.y][startCoord.x];
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            group.push(current);
+
+            [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+                const neighbor = { x: current.x + dx, y: current.y + dy };
+                const neighborStr = `${neighbor.x},${neighbor.y}`;
+                if (isValid(neighbor.x, neighbor.y) && board[neighbor.y][neighbor.x] === groupColor && !visited.has(neighborStr)) {
+                    visited.add(neighborStr);
+                    queue.push(neighbor);
+                }
+            });
+        }
+
+        // 2. グループ全体の隣接面をカウント
+        const { sameColorFaces, differentColorFaces } = countGroupFaces(group, groupColor);
+        
+        // 3. 消去条件を判定
         if (sameColorFaces > differentColorFaces) {
-            toClear.push({ x, y });
+            groupsToClear.push(group);
         }
     });
-    return toClear;
+    return groupsToClear;
 }
 
-function countAdjacentFaces(x, y, myColor, placedCoords) {
+function countGroupFaces(group, groupColor) {
     let sameColorFaces = 0;
     let differentColorFaces = 0;
-    
-    [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
-        const nx = x + dx;
-        const ny = y + dy;
+    const groupCoords = new Set(group.map(c => `${c.x},${c.y}`));
 
-        const isPartOfPlacedBlock = placedCoords.some(c => c.x === nx && c.y === ny);
-        if (isPartOfPlacedBlock) {
-            return;
-        }
+    group.forEach(cell => {
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+            const neighbor = { x: cell.x + dx, y: cell.y + dy };
+            const neighborStr = `${neighbor.x},${neighbor.y}`;
 
-        if (isValid(nx, ny) && board[ny][nx] !== 0) {
-            if (board[ny][nx] === myColor) {
-                sameColorFaces++;
-            } else {
-                differentColorFaces++;
+            // 隣がグループ内部のセルの場合はカウントしない
+            if (groupCoords.has(neighborStr)) return;
+
+            if (isValid(neighbor.x, neighbor.y) && board[neighbor.y][neighbor.x] !== 0) {
+                if (board[neighbor.y][neighbor.x] === groupColor) {
+                    sameColorFaces++;
+                } else {
+                    differentColorFaces++;
+                }
             }
-        }
+        });
     });
     return { sameColorFaces, differentColorFaces };
 }
@@ -237,9 +253,8 @@ function dropFloatingBlocks() {
     for (let x = 0; x < BOARD_WIDTH; x++) {
         let emptySpace = -1;
         for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
-            if (board[y][x] === 0 && emptySpace === -1) {
-                emptySpace = y;
-            } else if (board[y][x] !== 0 && emptySpace !== -1) {
+            if (board[y][x] === 0 && emptySpace === -1) emptySpace = y;
+            else if (board[y][x] !== 0 && emptySpace !== -1) {
                 board[emptySpace][x] = board[y][x];
                 board[y][x] = 0;
                 emptySpace--;
