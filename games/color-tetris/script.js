@@ -1,11 +1,11 @@
 // --- Setup ---
 const canvas = document.getElementById('game-board');
 const ctx = canvas.getContext('2d');
-const timeDisplay = document.getElementById('time-display'); // ★追加
+const timeDisplay = document.getElementById('time-display');
 
-const BOARD_WIDTH = 13;   // ★変更: 13
-const BOARD_HEIGHT = 25;  // ★変更: 25
-const CELL_SIZE = 22;     // スマホ画面に収まるように少し小さく調整
+const BOARD_WIDTH = 13;
+const BOARD_HEIGHT = 25;
+const CELL_SIZE = 22;
 
 canvas.width = BOARD_WIDTH * CELL_SIZE;
 canvas.height = BOARD_HEIGHT * CELL_SIZE;
@@ -15,10 +15,9 @@ let board = createEmptyBoard();
 let currentBlock = null;
 let dropCounter = 0;
 let lastTime = 0;
-let startTime = 0; // ★追加: 経過時間計測用
+let startTime = 0;
 const DROP_INTERVAL = 700;
 
-// ★変更: テトリスの全7種類のブロックを追加
 const blockShapes = [
     { shape: [[1, 1, 1, 1]], color: 'cyan' },      // I型
     { shape: [[1, 1], [1, 1]], color: 'yellow' }, // O型
@@ -35,7 +34,6 @@ function createEmptyBoard() {
 }
 
 function spawnNewBlock() {
-    // ★変更: 7種類からランダムにブロックを選択
     const randomIndex = Math.floor(Math.random() * blockShapes.length);
     const shapeData = blockShapes[randomIndex];
     
@@ -46,11 +44,10 @@ function spawnNewBlock() {
         y: 0
     };
 
-    // ゲームオーバーチェック
     if (checkCollision()) {
-        alert("ゲームオーバー！"); // 仮のゲームオーバー処理
+        alert("ゲームオーバー！");
         board = createEmptyBoard();
-        startTime = performance.now(); // 時間リセット
+        startTime = performance.now();
     }
 }
 
@@ -62,7 +59,7 @@ function draw() {
         row.forEach((value, x) => {
             if (value !== 0) {
                 ctx.fillStyle = value;
-                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1); // 枠線が見えるように-1
+                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
             }
         });
     });
@@ -85,12 +82,11 @@ function draw() {
 
 function update(time = 0) {
     if (startTime === 0) {
-        startTime = time; // 最初のフレームで開始時刻を記録
+        startTime = time;
     }
     const deltaTime = time - lastTime;
     lastTime = time;
     
-    // ★追加: 経過時間を更新
     const elapsedTime = Math.floor((time - startTime) / 1000);
     timeDisplay.textContent = elapsedTime;
 
@@ -122,19 +118,18 @@ function moveBlockSide(dir) {
     }
 }
 
-// ★追加: 即落下（ハードドロップ）機能
 function hardDrop() {
     if (!currentBlock) return;
     while (!checkCollision()) {
         currentBlock.y++;
     }
-    currentBlock.y--; // 1つ戻す
+    currentBlock.y--;
     placeBlock();
     spawnNewBlock();
 }
 
 function checkCollision() {
-    if (!currentBlock) return true; // ブロックがない場合は常に衝突とみなす
+    if (!currentBlock) return true;
     for (let y = 0; y < currentBlock.shape.length; y++) {
         for (let x = 0; x < currentBlock.shape[y].length; x++) {
             if (currentBlock.shape[y][x] !== 0) {
@@ -157,7 +152,6 @@ function placeBlock() {
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                // 盤面からはみ出さないようにチェック
                 if (currentBlock.y + y < BOARD_HEIGHT) {
                     board[currentBlock.y + y][currentBlock.x + x] = currentBlock.color;
                 }
@@ -166,20 +160,23 @@ function placeBlock() {
     });
 }
 
+
 // --- Event Listeners ---
 document.addEventListener('keydown', event => {
     if (event.key === 'ArrowLeft') {
         moveBlockSide(-1);
     } else if (event.key === 'ArrowRight') {
         moveBlockSide(1);
-    } else if (event.key === 'ArrowDown') {
-        hardDrop(); // ★変更: 即落下を呼び出す
+    } else if (event.key === 'ArrowDown') { // ★変更：下矢印キーは1マス降下
+        moveBlockDown();
+    } else if (event.key === 'ArrowUp') {   // ★追加：上矢印キーで即落下
+        hardDrop();
     }
 });
 
 document.getElementById('btn-left').addEventListener('click', () => moveBlockSide(-1));
 document.getElementById('btn-right').addEventListener('click', () => moveBlockSide(1));
-document.getElementById('btn-down').addEventListener('click', () => hardDrop()); // ★変更: 即落下を呼び出す
+document.getElementById('btn-down').addEventListener('click', () => hardDrop()); // 画面ボタンは即落下のまま
 
 // --- Initial Start ---
 spawnNewBlock();
