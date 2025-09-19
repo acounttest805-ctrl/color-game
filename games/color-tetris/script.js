@@ -167,9 +167,8 @@ function checkCollision() {
     return false;
 }
 
-// ★★★ ここからが消去ロジックの心臓部 ★★★
 function placeBlock() {
-    const placedCoords = []; // 固定されたブロックの座標を保存
+    const placedCoords = [];
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
@@ -187,47 +186,50 @@ function placeBlock() {
     dropFloatingBlocks();
 }
 
+// ★変更：条件判定ロジックをこの関数内に集約
 function checkAndClearBlocks(coords) {
     const toClear = new Set();
+    const checked = new Set(); // 連鎖チェックで同じマスを何度も調べないようにする
 
-    // まず、今回置かれたブロックの各パーツについてチェック
-    coords.forEach(coord => {
-        const { sameColorFaces, differentColorFaces } = countAdjacentFaces(coord.x, coord.y);
-        if (sameColorFaces > differentColorFaces) {
-            toClear.add(`${coord.x},${coord.y}`); // 消去対象に追加
-        }
-    });
-
-    // 消去対象になったブロックに隣接する同色ブロックもチェック（連鎖反応）
-    const queue = Array.from(toClear);
-    const checked = new Set(toClear);
+    // 今回置かれたブロックの各パーツをチェックの起点にする
+    const queue = [...coords.map(c => `${c.x},${c.y}`)];
+    coords.forEach(c => checked.add(`${c.x},${c.y}`));
 
     while (queue.length > 0) {
         const currentCoordStr = queue.shift();
         const [x, y] = currentCoordStr.split(',').map(Number);
-        
-        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
-            const nx = x + dx;
-            const ny = y + dy;
-            const neighborCoordStr = `${nx},${ny}`;
 
-            if (isValid(nx, ny) && board[ny][nx] === board[y][x] && !checked.has(neighborCoordStr)) {
-                const { sameColorFaces, differentColorFaces } = countAdjacentFaces(nx, ny);
-                if (sameColorFaces > differentColorFaces) {
-                    toClear.add(neighborCoordStr);
+        const { sameColorFaces, differentColorFaces } = countAdjacentFaces(x, y);
+
+        // ★★★ 消去条件を修正 ★★★
+        // 1. 同色の隣接面が1つ以上あること (大前提)
+        // 2. かつ、同色の隣接面が異色の隣接面より多いこと
+        if (sameColorFaces > 0 && sameColorFaces > differentColorFaces) {
+            toClear.add(currentCoordStr);
+
+            // このブロックが消えるなら、隣接する同色ブロックもチェック対象に加える (連鎖)
+            [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+                const nx = x + dx;
+                const ny = y + dy;
+                const neighborCoordStr = `${nx},${ny}`;
+
+                if (isValid(nx, ny) && board[ny][nx] === board[y][x] && !checked.has(neighborCoordStr)) {
                     queue.push(neighborCoordStr);
+                    checked.add(neighborCoordStr);
                 }
-                checked.add(neighborCoordStr);
-            }
-        });
+            });
+        }
     }
 
     // 実際にボードから消去
-    toClear.forEach(coordStr => {
-        const [x, y] = coordStr.split(',').map(Number);
-        board[y][x] = 0;
-    });
+    if (toClear.size > 0) {
+        toClear.forEach(coordStr => {
+            const [x, y] = coordStr.split(',').map(Number);
+            board[y][x] = 0;
+        });
+    }
 }
+
 
 function countAdjacentFaces(x, y) {
     let sameColorFaces = 0;
@@ -256,20 +258,17 @@ function isValid(x, y) {
 function dropFloatingBlocks() {
     for (let x = 0; x < BOARD_WIDTH; x++) {
         let emptySpace = -1;
-        // 下から上へスキャン
         for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
             if (board[y][x] === 0 && emptySpace === -1) {
-                emptySpace = y; // 最初の空きスペースを見つける
+                emptySpace = y;
             } else if (board[y][x] !== 0 && emptySpace !== -1) {
-                // ブロックを見つけたら、空きスペースに落とす
                 board[emptySpace][x] = board[y][x];
                 board[y][x] = 0;
-                emptySpace--; // 次の空きスペースは1つ上になる
+                emptySpace--;
             }
         }
     }
 }
-// ★★★ 消去ロジックここまで ★★★
 
 // --- Event Listeners ---
 document.addEventListener('keydown', event => {
