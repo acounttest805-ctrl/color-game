@@ -86,9 +86,7 @@ function draw() {
 }
 
 function update(time = 0) {
-    if (startTime === 0) {
-        startTime = time;
-    }
+    if (startTime === 0) startTime = time;
     const deltaTime = time - lastTime;
     lastTime = time;
     
@@ -104,32 +102,20 @@ function update(time = 0) {
     requestAnimationFrame(update);
 }
 
-// ★追加: ブロックを回転させる関数
 function rotateBlock(dir) {
     if (!currentBlock) return;
-
-    // 元の位置と形を保存
     const originalShape = currentBlock.shape;
     const originalX = currentBlock.x;
-
-    // 行列を転置して回転させる
     const shape = currentBlock.shape;
     const newShape = shape[0].map((_, colIndex) => shape.map(row => row[colIndex]));
-
-    if (dir > 0) { // 右回転
-        newShape.forEach(row => row.reverse());
-    } else { // 左回転
-        newShape.reverse();
-    }
+    if (dir > 0) { newShape.forEach(row => row.reverse()); }
+    else { newShape.reverse(); }
     currentBlock.shape = newShape;
-
-    // 回転後に壁にめり込んでいないかチェック＆補正
     let offset = 1;
     while (checkCollision()) {
         currentBlock.x += offset;
-        offset = -(offset + (offset > 0 ? 1 : -1)); // 1, -2, 3, -4... とずらして試す
+        offset = -(offset + (offset > 0 ? 1 : -1));
         if (offset > currentBlock.shape[0].length) {
-            // どうしても収まらない場合は回転をキャンセル
             currentBlock.shape = originalShape;
             currentBlock.x = originalX;
             return;
@@ -173,46 +159,126 @@ function checkCollision() {
             if (currentBlock.shape[y][x] !== 0) {
                 let newX = currentBlock.x + x;
                 let newY = currentBlock.y + y;
-                
-                if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) {
-                    return true;
-                }
-                if (board[newY] && board[newY][newX] !== 0) {
-                    return true;
-                }
+                if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) return true;
+                if (board[newY] && board[newY][newX] !== 0) return true;
             }
         }
     }
     return false;
 }
 
+// ★★★ ここからが消去ロジックの心臓部 ★★★
 function placeBlock() {
+    const placedCoords = []; // 固定されたブロックの座標を保存
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                if (currentBlock.y + y < BOARD_HEIGHT) {
-                    board[currentBlock.y + y][currentBlock.x + x] = currentBlock.color;
+                const boardY = currentBlock.y + y;
+                const boardX = currentBlock.x + x;
+                if (boardY < BOARD_HEIGHT) {
+                    board[boardY][boardX] = currentBlock.color;
+                    placedCoords.push({ x: boardX, y: boardY });
                 }
             }
         });
     });
+
+    checkAndClearBlocks(placedCoords);
+    dropFloatingBlocks();
 }
+
+function checkAndClearBlocks(coords) {
+    const toClear = new Set();
+
+    // まず、今回置かれたブロックの各パーツについてチェック
+    coords.forEach(coord => {
+        const { sameColorFaces, differentColorFaces } = countAdjacentFaces(coord.x, coord.y);
+        if (sameColorFaces > differentColorFaces) {
+            toClear.add(`${coord.x},${coord.y}`); // 消去対象に追加
+        }
+    });
+
+    // 消去対象になったブロックに隣接する同色ブロックもチェック（連鎖反応）
+    const queue = Array.from(toClear);
+    const checked = new Set(toClear);
+
+    while (queue.length > 0) {
+        const currentCoordStr = queue.shift();
+        const [x, y] = currentCoordStr.split(',').map(Number);
+        
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+            const nx = x + dx;
+            const ny = y + dy;
+            const neighborCoordStr = `${nx},${ny}`;
+
+            if (isValid(nx, ny) && board[ny][nx] === board[y][x] && !checked.has(neighborCoordStr)) {
+                const { sameColorFaces, differentColorFaces } = countAdjacentFaces(nx, ny);
+                if (sameColorFaces > differentColorFaces) {
+                    toClear.add(neighborCoordStr);
+                    queue.push(neighborCoordStr);
+                }
+                checked.add(neighborCoordStr);
+            }
+        });
+    }
+
+    // 実際にボードから消去
+    toClear.forEach(coordStr => {
+        const [x, y] = coordStr.split(',').map(Number);
+        board[y][x] = 0;
+    });
+}
+
+function countAdjacentFaces(x, y) {
+    let sameColorFaces = 0;
+    let differentColorFaces = 0;
+    const myColor = board[y][x];
+
+    [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+        const nx = x + dx;
+        const ny = y + dy;
+
+        if (isValid(nx, ny) && board[ny][nx] !== 0) {
+            if (board[ny][nx] === myColor) {
+                sameColorFaces++;
+            } else {
+                differentColorFaces++;
+            }
+        }
+    });
+    return { sameColorFaces, differentColorFaces };
+}
+
+function isValid(x, y) {
+    return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT;
+}
+
+function dropFloatingBlocks() {
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+        let emptySpace = -1;
+        // 下から上へスキャン
+        for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+            if (board[y][x] === 0 && emptySpace === -1) {
+                emptySpace = y; // 最初の空きスペースを見つける
+            } else if (board[y][x] !== 0 && emptySpace !== -1) {
+                // ブロックを見つけたら、空きスペースに落とす
+                board[emptySpace][x] = board[y][x];
+                board[y][x] = 0;
+                emptySpace--; // 次の空きスペースは1つ上になる
+            }
+        }
+    }
+}
+// ★★★ 消去ロジックここまで ★★★
 
 // --- Event Listeners ---
 document.addEventListener('keydown', event => {
-    if (event.key === 'ArrowLeft') {
-        moveBlockSide(-1);
-    } else if (event.key === 'ArrowRight') {
-        moveBlockSide(1);
-    } else if (event.key === 'ArrowDown') {
-        moveBlockDown();
-    } else if (event.key === 'ArrowUp') {
-        hardDrop();
-    } else if (event.key === 'z' || event.key === 'Z') { // ★追加: Zキーで左回転
-        rotateBlock(-1);
-    } else if (event.key === 'x' || event.key === 'X') { // ★追加: Xキーで右回転
-        rotateBlock(1);
-    }
+    if (event.key === 'ArrowLeft') moveBlockSide(-1);
+    else if (event.key === 'ArrowRight') moveBlockSide(1);
+    else if (event.key === 'ArrowDown') moveBlockDown();
+    else if (event.key === 'ArrowUp') hardDrop();
+    else if (event.key === 'z' || event.key === 'Z') rotateBlock(-1);
+    else if (event.key === 'x' || event.key === 'X') rotateBlock(1);
 });
 
 document.getElementById('btn-left').addEventListener('click', () => moveBlockSide(-1));
