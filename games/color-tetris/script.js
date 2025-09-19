@@ -18,10 +18,8 @@ let lastTime = 0;
 let startTime = 0;
 const DROP_INTERVAL = 700;
 
-// ★追加: 3色のカラーパレットを定義
-const blockColors = ['#e74c3c', '#2ecc71', '#3498db']; // Flat UI: Red, Green, Blue
+const blockColors = ['#e74c3c', '#2ecc71', '#3498db'];
 
-// ★変更: ブロック定義から色情報を削除し、形だけに専念させる
 const blockShapes = [
     { shape: [[1, 1, 1, 1]] },      // I型
     { shape: [[1, 1], [1, 1]] }, // O型
@@ -38,18 +36,15 @@ function createEmptyBoard() {
 }
 
 function spawnNewBlock() {
-    // ★変更: 形と色を別々にランダムで選ぶ
-    // 1. ランダムな形を選ぶ
     const shapeIndex = Math.floor(Math.random() * blockShapes.length);
     const shapeData = blockShapes[shapeIndex];
 
-    // 2. ランダムな色を選ぶ
     const colorIndex = Math.floor(Math.random() * blockColors.length);
     const randomColor = blockColors[colorIndex];
     
     currentBlock = {
         shape: shapeData.shape,
-        color: randomColor, // 選ばれたランダムな色を適用
+        color: randomColor,
         x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
         y: 0
     };
@@ -107,6 +102,39 @@ function update(time = 0) {
     
     draw();
     requestAnimationFrame(update);
+}
+
+// ★追加: ブロックを回転させる関数
+function rotateBlock(dir) {
+    if (!currentBlock) return;
+
+    // 元の位置と形を保存
+    const originalShape = currentBlock.shape;
+    const originalX = currentBlock.x;
+
+    // 行列を転置して回転させる
+    const shape = currentBlock.shape;
+    const newShape = shape[0].map((_, colIndex) => shape.map(row => row[colIndex]));
+
+    if (dir > 0) { // 右回転
+        newShape.forEach(row => row.reverse());
+    } else { // 左回転
+        newShape.reverse();
+    }
+    currentBlock.shape = newShape;
+
+    // 回転後に壁にめり込んでいないかチェック＆補正
+    let offset = 1;
+    while (checkCollision()) {
+        currentBlock.x += offset;
+        offset = -(offset + (offset > 0 ? 1 : -1)); // 1, -2, 3, -4... とずらして試す
+        if (offset > currentBlock.shape[0].length) {
+            // どうしても収まらない場合は回転をキャンセル
+            currentBlock.shape = originalShape;
+            currentBlock.x = originalX;
+            return;
+        }
+    }
 }
 
 function moveBlockDown() {
@@ -170,7 +198,6 @@ function placeBlock() {
     });
 }
 
-
 // --- Event Listeners ---
 document.addEventListener('keydown', event => {
     if (event.key === 'ArrowLeft') {
@@ -181,6 +208,10 @@ document.addEventListener('keydown', event => {
         moveBlockDown();
     } else if (event.key === 'ArrowUp') {
         hardDrop();
+    } else if (event.key === 'z' || event.key === 'Z') { // ★追加: Zキーで左回転
+        rotateBlock(-1);
+    } else if (event.key === 'x' || event.key === 'X') { // ★追加: Xキーで右回転
+        rotateBlock(1);
     }
 });
 
