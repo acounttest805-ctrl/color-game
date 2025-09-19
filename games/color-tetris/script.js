@@ -167,79 +167,69 @@ function checkCollision() {
     return false;
 }
 
+// ★★★ ここからが消去ロジックの心臓部 (シンプル版に修正) ★★★
 function placeBlock() {
-    const placedCoords = [];
+    // 1. ブロックを盤面に固定する
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                const boardY = currentBlock.y + y;
-                const boardX = currentBlock.x + x;
-                if (boardY < BOARD_HEIGHT) {
-                    board[boardY][boardX] = currentBlock.color;
-                    placedCoords.push({ x: boardX, y: boardY });
-                }
+                board[currentBlock.y + y][currentBlock.x + x] = currentBlock.color;
             }
         });
     });
 
+    // 2. 固定されたブロックの各パーツの座標を取得
+    const placedCoords = [];
+    currentBlock.shape.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                placedCoords.push({ x: currentBlock.x + x, y: currentBlock.y + y });
+            }
+        });
+    });
+
+    // 3. 消去チェックと実行
     checkAndClearBlocks(placedCoords);
+
+    // 4. 浮いたブロックを落とす
     dropFloatingBlocks();
 }
 
-// ★変更：条件判定ロジックをこの関数内に集約
 function checkAndClearBlocks(coords) {
-    const toClear = new Set();
-    const checked = new Set(); // 連鎖チェックで同じマスを何度も調べないようにする
+    const toClear = [];
 
-    // 今回置かれたブロックの各パーツをチェックの起点にする
-    const queue = [...coords.map(c => `${c.x},${c.y}`)];
-    coords.forEach(c => checked.add(`${c.x},${c.y}`));
-
-    while (queue.length > 0) {
-        const currentCoordStr = queue.shift();
-        const [x, y] = currentCoordStr.split(',').map(Number);
+    // 固定されたブロックの各パーツについて、消去条件をチェック
+    coords.forEach(coord => {
+        const { x, y } = coord;
+        
+        // 座標が盤面内であることを確認
+        if (!isValid(x, y) || board[y][x] === 0) return;
 
         const { sameColorFaces, differentColorFaces } = countAdjacentFaces(x, y);
 
-        // ★★★ 消去条件を修正 ★★★
-        // 1. 同色の隣接面が1つ以上あること (大前提)
-        // 2. かつ、同色の隣接面が異色の隣接面より多いこと
-        if (sameColorFaces > 0 && sameColorFaces > differentColorFaces) {
-            toClear.add(currentCoordStr);
-
-            // このブロックが消えるなら、隣接する同色ブロックもチェック対象に加える (連鎖)
-            [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
-                const nx = x + dx;
-                const ny = y + dy;
-                const neighborCoordStr = `${nx},${ny}`;
-
-                if (isValid(nx, ny) && board[ny][nx] === board[y][x] && !checked.has(neighborCoordStr)) {
-                    queue.push(neighborCoordStr);
-                    checked.add(neighborCoordStr);
-                }
-            });
+        // ★★★ ご要望通りの消去条件 ★★★
+        if (sameColorFaces > differentColorFaces) {
+            toClear.push({ x, y });
         }
-    }
+    });
 
-    // 実際にボードから消去
-    if (toClear.size > 0) {
-        toClear.forEach(coordStr => {
-            const [x, y] = coordStr.split(',').map(Number);
-            board[y][x] = 0;
-        });
-    }
+    // 条件を満たしたブロックを実際に消去
+    toClear.forEach(coord => {
+        board[coord.y][coord.x] = 0;
+    });
 }
-
 
 function countAdjacentFaces(x, y) {
     let sameColorFaces = 0;
     let differentColorFaces = 0;
     const myColor = board[y][x];
 
+    // 上下左右の4方向をチェック
     [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
         const nx = x + dx;
         const ny = y + dy;
 
+        // 隣のマスが盤面内で、かつ空でない場合
         if (isValid(nx, ny) && board[ny][nx] !== 0) {
             if (board[ny][nx] === myColor) {
                 sameColorFaces++;
@@ -258,17 +248,20 @@ function isValid(x, y) {
 function dropFloatingBlocks() {
     for (let x = 0; x < BOARD_WIDTH; x++) {
         let emptySpace = -1;
+        // 下から上へスキャン
         for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
             if (board[y][x] === 0 && emptySpace === -1) {
-                emptySpace = y;
+                emptySpace = y; // 最初の空きスペースを見つける
             } else if (board[y][x] !== 0 && emptySpace !== -1) {
+                // ブロックを見つけたら、空きスペースに落とす
                 board[emptySpace][x] = board[y][x];
                 board[y][x] = 0;
-                emptySpace--;
+                emptySpace--; // 次の空きスペースは1つ上になる
             }
         }
     }
 }
+// ★★★ 消去ロジックここまで ★★★
 
 // --- Event Listeners ---
 document.addEventListener('keydown', event => {
