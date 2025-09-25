@@ -1,0 +1,21 @@
+{
+  "name": "色覚特性に気づくゲーム",
+  "short_name": "色覚ゲーム",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#4a5a6a",
+  "description": "色覚の多様性に気づくきっかけを作るためのゲームコレクションです。",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
