@@ -18,12 +18,18 @@ let dropCounter = 0;
 let lastTime = 0;
 let startTime = 0;
 let score = 0;
-let dropInterval = 700; // ★ constからletに変更
-let ceilingY = 0; // ★追加: 盤面の上限 (狭まっていく)
+const DROP_INTERVAL = 700;
 
+// ★★★ 変更点：色覚特性を持つ人が見分けにくいカラーパレット ★★★
 const blockColors = [
-    '#e74c3c', '#2ecc71', '#3498db', '#f1c40f', '#9b59b6',
-    '#e67e22', '#1abc9c', '#ecf0f1'
+    '#9D8478', // くすんだ赤茶 (P型/D型で緑系に見える)
+    '#7E8B78', // くすんだ緑   (P型/D型で赤茶系に見える)
+    '#9182A7', // くすんだ紫   (P型/D型で青系に見える)
+    '#738FA8', // くすんだ青
+    '#A0916C', // 黄土色     (P型/D型で黄緑と混同)
+    '#B0C18B', // 黄緑       (P型/D型でオレンジ/黄土色と混同)
+    '#D7B9C4', // 薄いピンク   (P型/D型で水色/灰色と混同)
+    '#B8C5C8'  // 薄い水色/灰色
 ];
 
 const blockShapes = [
@@ -49,16 +55,13 @@ function spawnNewBlock() {
     currentBlock = {
         shape: shapeData.shape, color: randomColor,
         x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
-        y: ceilingY // ★変更: 盤面の上限から出現
+        y: 0
     };
-
     if (checkCollision()) {
         alert("ゲームオーバー！");
         board = createEmptyBoard();
         startTime = performance.now();
         score = 0;
-        dropInterval = 700; // リセット
-        ceilingY = 0;       // リセット
         updateUI(performance.now());
     }
 }
@@ -66,13 +69,6 @@ function spawnNewBlock() {
 function draw() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // ★追加: 狭まったエリアをグレーで描画
-    if (ceilingY > 0) {
-        ctx.fillStyle = '#333'; // グレー
-        ctx.fillRect(0, 0, canvas.width, ceilingY * CELL_SIZE);
-    }
-
     board.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
@@ -99,32 +95,11 @@ function update(time = 0) {
     lastTime = time;
     
     updateUI(time);
-    
-    // ★追加: 難易度調整ロジック
-    checkDifficultyUpdate(time);
 
     dropCounter += deltaTime;
-    if (dropCounter > dropInterval) { // ★変更: dropIntervalを参照
-        moveBlockDown();
-    }
-    
+    if (dropCounter > DROP_INTERVAL) moveBlockDown();
     draw();
     requestAnimationFrame(update);
-}
-
-// ★追加: 時間経過による難易度上昇を管理する関数
-function checkDifficultyUpdate(time) {
-    const elapsedTimeInSeconds = (time - startTime) / 1000;
-
-    // 1. 1分ごとに盤面を狭める
-    const minutesPassedForCeiling = Math.floor(elapsedTimeInSeconds / 60);
-    // 9分(540秒)まで狭める
-    ceilingY = Math.min(minutesPassedForCeiling, 9); 
-
-    // 2. 5分ごとに速度を上げる
-    const fiveMinuteIntervals = Math.floor(elapsedTimeInSeconds / 300); // 300秒 = 5分
-    const baseInterval = 700;
-    dropInterval = baseInterval / Math.pow(2, fiveMinuteIntervals);
 }
 
 function updateUI(time = 0) {
@@ -190,11 +165,7 @@ function checkCollision() {
             if (currentBlock.shape[y][x] !== 0) {
                 let newX = currentBlock.x + x;
                 let newY = currentBlock.y + y;
-                if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT || 
-                    newY < ceilingY // ★追加: 天井との衝突判定
-                ) {
-                    return true;
-                }
+                if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) return true;
                 if (board[newY] && board[newY][newX] !== 0) return true;
             }
         }
@@ -203,14 +174,6 @@ function checkCollision() {
 }
 
 function placeBlock() {
-    currentBlock.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                board[currentBlock.y + y][currentBlock.x + x] = currentBlock.color;
-            }
-        });
-    });
-
     const placedCoords = [];
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
@@ -219,13 +182,14 @@ function placeBlock() {
             }
         });
     });
-    
+
     const sameColorNeighbors = findSameColorNeighbors(placedCoords, currentBlock.color);
 
     if (sameColorNeighbors.length > 0) {
         const coreClearSet = new Set();
         placedCoords.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
         sameColorNeighbors.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
+        
         const finalClearSet = findCollateralDamage(coreClearSet);
 
         let sameColorCleared = 0;
@@ -247,7 +211,11 @@ function placeBlock() {
         });
         
         dropFloatingBlocks();
-    } 
+    } else {
+        placedCoords.forEach(c => {
+            board[c.y][c.x] = currentBlock.color;
+        });
+    }
 }
 
 function findSameColorNeighbors(coords, color) {
@@ -363,13 +331,9 @@ document.addEventListener('keydown', event => {
     else if (event.key === 'x' || event.key === 'X') rotateBlock(1);
 });
 
-// 移動ボタン
 document.getElementById('btn-left').addEventListener('click', () => moveBlockSide(-1));
 document.getElementById('btn-right').addEventListener('click', () => moveBlockSide(1));
-// 変更：▼ボタンをソフトドロップに変更
 document.getElementById('btn-down').addEventListener('click', () => moveBlockDown());
-
-// 追加：新しいアクションボタン
 document.getElementById('btn-rotate-left').addEventListener('click', () => rotateBlock(-1));
 document.getElementById('btn-hard-drop').addEventListener('click', () => hardDrop());
 document.getElementById('btn-rotate-right').addEventListener('click', () => rotateBlock(1));
