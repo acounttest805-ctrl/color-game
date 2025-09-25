@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>違う色を探せ</title>
-    <link rel="stylesheet" href="./style.css">
-    <!-- iOSホーム画面用 -->
-    <link rel="apple-touch-icon" href="../../icon.png">
 
-    <!-- Windowsブラウザタブなど、その他全般用 -->
+    <!-- PWA & Icon Links -->
+    <link rel="manifest" href="../../manifest.json">
+    <meta name="theme-color" content="#f0f0f0">
+    <link rel="apple-touch-icon" href="../../icon.png">
     <link rel="icon" href="../../icon.png">
+
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
     <h1>違う色を探せ</h1>
@@ -35,7 +37,10 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('../../sw.js');
+      }
+    </script>
 </body>
-
 </html>
-
