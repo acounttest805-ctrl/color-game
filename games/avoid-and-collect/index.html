@@ -2,17 +2,18 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Avoid & Collect</title>
+    <!-- viewport を user-scalable=no なしに修正 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="manifest" href="../../manifest.json">
-    <meta name="theme-color" content="#1a1a1a"> <!-- ゲームの背景色に合わせる -->
-    <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-    <link rel="stylesheet" href="./style.css">
-    <!-- iOSホーム画面用 -->
-    <link rel="apple-touch-icon" href="../../icon.png">
+    <!-- title をゲーム名に修正 -->
+    <title>Avoid & Collect</title> 
 
-    <!-- Windowsブラウザタブなど、その他全般用 -->
+    <!-- PWA & Icon Links -->
+    <link rel="manifest" href="../../manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="apple-touch-icon" href="../../icon.png">
     <link rel="icon" href="../../icon.png">
+
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
     <div id="game-wrapper">
@@ -56,9 +57,9 @@
 
     <script src="./script.js"></script>
     <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('../../sw.js');
-  }
-</script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('../../sw.js');
+      }
+    </script>
 </body>
 </html>
