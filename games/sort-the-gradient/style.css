@@ -34,6 +34,7 @@ body {
     background-color: #e9ecef;
     border-radius: 8px;
     min-height: 80px;
+    flex-wrap: wrap;
 }
 
 .color-chip {
@@ -109,4 +110,11 @@ body {
 }
 .home-button-modal {
     background-color: #6c757d; color: white; border-color: #6c757d;
+}
+
+@media (max-width: 480px) {
+    .color-chip {
+        width: 40px;
+        height: 40px;
+    }
 }
