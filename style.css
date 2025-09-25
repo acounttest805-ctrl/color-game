@@ -10,65 +10,94 @@ body {
 header {
     background-color: #4a5a6a;
     color: white;
-    padding: 1em 0;
+    padding: 1em 1.5em;
     text-align: center;
 }
+header h1 { margin: 0; }
+header p { margin-top: 0.5em; color: #d0d5d9; }
 
-header h1 {
-    margin: 0;
+/* メインコンテンツ */
+.home-main {
+    padding: 1em 0;
+    /* ★追加: 横幅がはみ出た場合に隠す */
+    width: 100%;
+    overflow-x: hidden;
 }
 
-/* ゲーム選択エリア */
-.game-selector {
+.genre-carousel {
+    margin-bottom: 2em;
+}
+
+.genre-title {
+    font-size: 1.5em;
+    margin: 0 0 0.5em 1.5em;
+}
+
+/* ★★★ ここを修正 ★★★ */
+.carousel-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 2em;
-    padding: 2em;
-    max-width: 1200px;
-    margin: 0 auto;
+    overflow-x: scroll; /* autoからscrollに変更して挙動を安定させる */
+    gap: 1em;
+    padding: 0.5em 1.5em; /* 上下のpaddingを少し調整 */
+    
+    /* スクロールバーを非表示にする設定 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+.carousel-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera*/
 }
 
 /* ゲームカード */
 .game-card {
     background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    width: 300px;
-    text-align: center;
-    text-decoration: none; /* リンクの下線を消す */
-    color: inherit; /* リンクの文字色を親要素に合わせる */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    flex: 0 0 280px; 
+    width: 280px;
+    overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .game-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.game-card a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%; /* カード全体をリンク範囲にする */
 }
 
 .game-card img {
     width: 100%;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
+    height: 150px;
+    object-fit: cover;
+    display: block;
 }
 
-.game-card h2 {
-    margin: 0.5em 0;
+.game-card h3 {
+    font-size: 1.2em;
+    margin: 0.8em 1em 0.5em;
 }
 
 .game-card p {
-    padding: 0 1em 1em;
+    font-size: 0.9em;
+    margin: 0 1em 1em;
     color: #666;
+    line-height: 1.5;
 }
 
 /* 「準備中」のカード */
 .coming-soon {
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.7;
 }
 .coming-soon:hover {
     transform: none;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 /* フッター */

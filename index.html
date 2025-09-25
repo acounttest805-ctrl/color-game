@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>色覚特性に気づくゲーム</title>
     
-    <!-- PWA & Icon Links -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4a5a6a">
     <link rel="apple-touch-icon" href="icon.png">
@@ -19,42 +18,89 @@
         <p>気になるゲームを選んで遊んでみよう！</p>
     </header>
 
-    <main class="game-selector">
-        <a href="./games/find-the-color/index.html" class="game-card">
-            <img src="./assets/find-the-color.png" alt="違う色を探せのサムネイル">
-            <h2>違う色を探せ</h2>
-            <p>たくさんの中に一つだけある、違う色のタイルを見つけるゲームです。</p>
-        </a>
-        <a href="./games/invisible-path/index.html" class="game-card">
-            <img src="./assets/invisible-path.png" alt="色で見分ける足場のサムネイル">
-            <h2>色で見分ける足場</h2>
-            <p>見えにくい足場を渡って、ゴールを目指すアクションゲームです。</p>
-        </a>
-        <a href="./games/sort-the-gradient/index.html" class="game-card">
-            <img src="./assets/sort-the-gradient.png" alt="グラデーションを並べ替えろのサムネイル">
-            <h2>グラデーションを並べ替えろ</h2>
-            <p>バラバラのカラーチップを、正しい色の順番に並べ替えるパズルゲームです。</p>
-        </a>
-        <a href="./games/avoid-and-collect/index.html" class="game-card">
-            <img src="./assets/avoid-and-collect.png" alt="Avoid & Collectのサムネイル">
-            <h2>Avoid & Collect</h2>
-            <p>上から降ってくるオブジェクトを避けたり集めたりする、縦スクロールアクションゲームです。</p>
-        </a>
-        <a href="./games/match-the-pattern/index.html" class="game-card">
-            <img src="./assets/match-the-pattern.png" alt="ブロックの色を揃えろ！のサムネイル">
-            <h2>ブロックの色を揃えろ！</h2>
-            <p>見本と同じになるように、ブロックの色を揃える記憶力と色彩感覚のゲームです。</p>
-        </a>
-        <a href="./games/color-tetris/index.html" class="game-card">
-            <img src="./assets/color-tetris.png" alt="Color Tetrisのサムネイル">
-            <h2>Color Tetris</h2>
-            <p>落ちてくるブロックを操作し、同じ色を隣接させて消していくパズルゲームです。</p>
-        </a>
-        <div class="game-card coming-soon">
-            <img src="./assets/ComingSoon.png" alt="準備中のゲーム">
-            <h2>次のゲーム</h2>
-            <p>現在準備中です。お楽しみに！</p>
-        </div>
+    <main class="home-main">
+        <!-- ジャンル1: シンプルな識別ゲーム -->
+        <section class="genre-carousel">
+            <h2 class="genre-title">シンプルな識別ゲーム</h2>
+            <div class="carousel-container">
+                <div class="game-card">
+                    <a href="./games/find-the-color/index.html">
+                        <img src="./assets/find-the-color.png" alt="違う色を探せのサムネイル">
+                        <h3>違う色を探せ</h3>
+                        <p>たくさんの中から一つだけ違う色のタイルを見つけるゲーム。</p>
+                    </a>
+                </div>
+                <!-- Coming Soonカード -->
+                <div class="game-card coming-soon">
+                    <img src="./assets/ComingSoon.png" alt="準備中のゲーム">
+                    <h3>次のゲーム</h3>
+                    <p>現在準備中です。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ジャンル2: アクションパズル -->
+        <section class="genre-carousel">
+            <h2 class="genre-title">アクションパズル</h2>
+            <div class="carousel-container">
+                <div class="game-card">
+                    <a href="./games/invisible-path/index.html">
+                        <img src="./assets/invisible-path.png" alt="色で見分ける足場のサムネイル">
+                        <h3>色で見分ける足場</h3>
+                        <p>見えにくい足場を渡ってゴールを目指すアクションゲーム。</p>
+                    </a>
+                </div>
+                <div class="game-card">
+                    <a href="./games/avoid-and-collect/index.html">
+                        <img src="./assets/avoid-and-collect.png" alt="Avoid & Collectのサムネイル">
+                        <h3>Avoid & Collect</h3>
+                        <p>上から降ってくるオブジェクトを避けたり集めたりするゲーム。</p>
+                    </a>
+                </div>
+                <!-- Coming Soonカード -->
+                <div class="game-card coming-soon">
+                    <img src="./assets/ComingSoon.png" alt="準備中のゲーム">
+                    <h3>次のゲーム</h3>
+                    <p>現在準備中です。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ジャンル3: 思考パズル -->
+        <section class="genre-carousel">
+            <h2 class="genre-title">思考パズル</h2>
+            <div class="carousel-container">
+                <div class="game-card">
+                    <a href="./games/sort-the-gradient/index.html">
+                        <img src="./assets/sort-the-gradient.png" alt="グラデーションを並べ替えろのサムネイル">
+                        <h3>グラデーションを並べ替えろ</h3>
+                        <p>バラバラのカラーチップを正しい色の順番に並べ替えるゲーム。</p>
+                    </a>
+                </div>
+                <div class="game-card">
+                     <a href="./games/match-the-pattern/index.html">
+                        <img src="./assets/match-the-pattern.png" alt="ブロックの色を揃えろ！のサムネイル">
+                        <h3>ブロックの色を揃えろ！</h3>
+                        <p>見本と同じになるようにブロックの色を揃える記憶力ゲーム。</p>
+                    </a>
+                </div>
+                <!-- ★★★ Color Tetrisを修正 ★★★ -->
+                <div class="game-card">
+                    <a href="./games/color-tetris/index.html">
+                        <img src="./assets/color-tetris.png" alt="Color Tetrisのサムネイル">
+                        <h3>Color Tetris</h3>
+                        <p>落ちてくるブロックを操作し、同じ色を隣接させて消すゲーム。</p>
+                    </a>
+                </div>
+                <!-- Coming Soonカード -->
+                <div class="game-card coming-soon">
+                    <img src="./assets/ComingSoon.png" alt="準備中のゲーム">
+                    <h3>次のゲーム</h3>
+                    <p>現在準備中です。</p>
+                </div>
+            </div>
+        </section>
+        
     </main>
 
     <footer>
