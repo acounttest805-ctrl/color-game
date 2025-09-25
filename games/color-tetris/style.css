@@ -14,42 +14,98 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
+.hidden {
+    display: none !important;
+}
+
+/* --- Title Screen --- */
+#title-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2em;
+    box-sizing: border-box;
+}
+.title-content h1 { font-size: 2.5em; margin-bottom: 0.5em; }
+.title-content > p { font-size: 1.1em; color: #ccc; max-width: 400px; margin-bottom: 2em; }
+.mode-selection { display: flex; flex-direction: column; gap: 1em; width: 100%; max-width: 400px; }
+.mode-selection button { background-color: #333; border: 1px solid #555; color: white; padding: 1em; border-radius: 8px; text-align: left; cursor: pointer; transition: background-color 0.2s; }
+.mode-selection button:hover { background-color: #444; }
+.mode-selection h3 { margin: 0 0 0.5em 0; font-size: 1.2em; }
+.mode-selection p { margin: 0; font-size: 0.9em; color: #bbb; }
+.home-button { display: inline-block; margin-top: 2em; color: #ccc; text-decoration: none; }
+
+/* --- Game Screen --- */
+#game-screen-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 #game-container {
     border: 2px solid #fff;
 }
 
+/* ★★★ ここから下を修正 ★★★ */
 #info-bar {
-    width: 390px; /* canvasの幅 (13*30) に合わせる */
-    display: flex;
-    justify-content: space-between;
+    width: 390px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* 3つの要素を均等に配置 */
+    align-items: center;
     margin-bottom: 10px;
-    font-size: 1.5em;
     font-weight: bold;
 }
 
-/* ★★★ ここから下を修正 ★★★ */
+#time-container {
+    font-size: 1.2em;
+    text-align: left;
+}
+#score-container {
+    font-size: 1.6em;
+    text-align: center;
+}
+#back-to-title-btn {
+    font-size: 0.9em;
+    background: none;
+    border: 1px solid #888;
+    color: #ccc;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    justify-self: end; /* 右端に寄せる */
+    transition: background-color 0.2s, color 0.2s;
+}
+#back-to-title-btn:hover {
+    background-color: #555;
+    color: white;
+}
+/* ★★★ ここまで ★★★ */
+
 #controls {
     display: grid;
-    /* 2行x3列のグリッドレイアウトを定義 */
     grid-template-areas:
         "left down right"
         "rotate-left hard-drop rotate-right";
     width: 240px;
     margin-top: 15px;
-    gap: 15px; /* 少し間隔を広げる */
+    gap: 15px;
 }
 
 #controls button {
     width: 70px;
     height: 70px;
-    font-size: 2em; /* アイコン文字に合わせて調整 */
+    font-size: 2em;
     border: none;
     border-radius: 10px;
     background-color: #888;
     color: #fff;
     cursor: pointer;
     touch-action: manipulation;
-    /* アイコンの垂直位置を中央に調整 */
     display: flex;
     justify-content: center;
     align-items: center;

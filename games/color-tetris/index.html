@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Color Tetris</title>
     
-    <!-- PWA & Icon Links -->
     <link rel="manifest" href="../../manifest.json">
     <meta name="theme-color" content="#1a1a1a">
     <link rel="apple-touch-icon" href="../../icon.png">
@@ -14,24 +13,44 @@
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <div id="info-bar">
-        <span>Time: <span id="time-display">0</span>s</span>
-        <span>Score: <span id="score-display">0</span></span>
-    </div>
-    
-    <div id="game-container">
-        <canvas id="game-board"></canvas>
+    <div id="title-screen">
+        <div class="title-content">
+            <h1>Color Tetris</h1>
+            <p>色の見え方によって難易度が変わるパズルゲームです。</p>
+            <div class="mode-selection">
+                <button id="normal-mode-btn">
+                    <h3>ノーマルモード</h3>
+                    <p>色覚特性を持つ人には識別が困難な配色でプレイします。</p>
+                </button>
+                <button id="support-mode-btn">
+                    <h3>色覚サポートモード</h3>
+                    <p>誰にでも識別しやすい、はっきりとした色の配色でプレイします。</p>
+                </button>
+            </div>
+            <a href="../../index.html" class="home-button">ホームに戻る</a>
+        </div>
     </div>
 
-    <div id="controls">
-        <!-- 1行目: 移動系 -->
-        <button id="btn-left">◀</button>
-        <button id="btn-down">▼</button>
-        <button id="btn-right">▶</button>
-        <!-- 2行目: アクション系 -->
-        <button id="btn-rotate-left">⟲</button>
-        <button id="btn-hard-drop">⤓</button>
-        <button id="btn-rotate-right">⟳</button>
+    <div id="game-screen-wrapper" class="hidden">
+        <!-- ★★★ ここを修正 ★★★ -->
+        <div id="info-bar">
+            <span id="time-container">Time: <span id="time-display">0:00</span></span>
+            <span id="score-container">Score: <span id="score-display">0</span></span>
+            <button id="back-to-title-btn">タイトルへ</button>
+        </div>
+        
+        <div id="game-container">
+            <canvas id="game-board"></canvas>
+        </div>
+
+        <div id="controls">
+            <button id="btn-left">◀</button>
+            <button id="btn-down">▼</button>
+            <button id="btn-right">▶</button>
+            <button id="btn-rotate-left">⟲</button>
+            <button id="btn-hard-drop">⤓</button>
+            <button id="btn-rotate-right">⟳</button>
+        </div>
     </div>
 
     <script src="./script.js"></script>
