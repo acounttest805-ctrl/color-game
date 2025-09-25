@@ -45,39 +45,58 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     cursor: grab;
     transition: transform 0.2s, box-shadow 0.2s;
-
-    user-select: none; /* テキスト選択を無効化 */
-    -webkit-user-select: none; /* Safari用 */
-    -webkit-touch-callout: none; /* 長押しメニューを無効化 */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 .color-chip:active {
     cursor: grabbing;
 }
 
-/* ドラッグ中のスタイル */
 .color-chip.dragging {
     opacity: 0.5;
     transform: scale(1.1);
     box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
 
-#check-button {
+/* ボタンを囲むコンテナのスタイル */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1em;
     margin-top: 2em;
-    padding: 0.8em 2em;
-    font-size: 1.2em;
+}
+
+/* ボタンの共通スタイル */
+.action-buttons button {
+    padding: 0.8em 1.5em;
+    font-size: 1.1em;
     border-radius: 8px;
-    border: none;
+    border: 1px solid #ccc;
+    background-color: #f8f9fa;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.action-buttons button:hover {
+    border-color: #aaa;
+}
+
+/* 「これでOK！」ボタンのスタイル */
+#check-button {
     background-color: #007bff;
     color: white;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    border-color: #007bff;
 }
 #check-button:hover {
     background-color: #0056b3;
+    border-color: #0056b3;
 }
 
+/* 「次のステージへ」ボタンのスタイル */
 #next-stage-button {
-    background-color: #28a745; /* 緑色 */
+    background-color: #28a745;
     color: white;
     border-color: #28a745;
 }
@@ -86,7 +105,8 @@ body {
     border-color: #218838;
 }
 
-/* --- モーダル表示用のスタイル (既存のものを流用) --- */
+
+/* --- モーダル表示用のスタイル --- */
 .hidden { display: none !important; }
 
 #result-modal {
