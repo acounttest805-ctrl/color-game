@@ -2,22 +2,27 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <!-- viewport を user-scalable=no なしに修正 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Color Tetris</title>
+    
+    <!-- PWA & Icon Links -->
+    <link rel="manifest" href="../../manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="apple-touch-icon" href="../../icon.png">
+    <link rel="icon" href="../../icon.png">
+
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <!-- ↓↓↓ このブロックを追加 ↓↓↓ -->
     <div id="info-bar">
         <span>Time: <span id="time-display">0</span>s</span>
     </div>
-    <!-- ↑↑↑ ここまで ↑↑↑ -->
     
     <div id="game-container">
         <canvas id="game-board"></canvas>
     </div>
 
-    <!-- ... (操作ボタンはそのまま) ... -->
     <div id="controls">
         <button id="btn-left">◀</button>
         <button id="btn-down">▼</button>
@@ -25,5 +30,10 @@
     </div>
 
     <script src="./script.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('../../sw.js');
+      }
+    </script>
 </body>
 </html>
