@@ -1,9 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>色覚特性に気づくゲーム</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="manifest" href="manifest.json">
+	<meta name="theme-color" content="#4a5a6a">
+	<link rel="apple-touch-icon" href="apple-touch-icon.png"> <!-- iOS用アイコン -->
     <link rel="stylesheet" href="style.css">
     <!-- iOSホーム画面用 -->
     <link rel="apple-touch-icon" href="icon.png">
@@ -74,5 +79,10 @@
     <footer>
         <p>【注意】このゲームは医学的な診断を行うものではありません。ご自身の特性について詳しく知りたい場合は、専門の医療機関にご相談ください。</p>
     </footer>
+    <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
 </body>
 </html>
