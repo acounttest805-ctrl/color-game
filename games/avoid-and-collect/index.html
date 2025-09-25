@@ -2,8 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Avoid & Collect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="../../manifest.json">
+    <meta name="theme-color" content="#1a1a1a"> <!-- ゲームの背景色に合わせる -->
+    <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
     <link rel="stylesheet" href="./style.css">
     <!-- iOSホーム画面用 -->
     <link rel="apple-touch-icon" href="../../icon.png">
@@ -52,7 +55,10 @@
     </div>
 
     <script src="./script.js"></script>
+    <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('../../sw.js');
+  }
+</script>
 </body>
-
 </html>
-
