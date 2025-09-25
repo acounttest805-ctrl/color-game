@@ -2,10 +2,11 @@
 const canvas = document.getElementById('game-board');
 const ctx = canvas.getContext('2d');
 const timeDisplay = document.getElementById('time-display');
+const scoreDisplay = document.getElementById('score-display');
 
 const BOARD_WIDTH = 13;
-const BOARD_HEIGHT = 25;
-const CELL_SIZE = 22;
+const BOARD_HEIGHT = 18; // ★変更
+const CELL_SIZE = 30;    // ★変更
 
 canvas.width = BOARD_WIDTH * CELL_SIZE;
 canvas.height = BOARD_HEIGHT * CELL_SIZE;
@@ -16,10 +17,19 @@ let currentBlock = null;
 let dropCounter = 0;
 let lastTime = 0;
 let startTime = 0;
+let score = 0;
 const DROP_INTERVAL = 700;
 
-// ★★★ 変更点 ★★★
-const blockColors = ['#e74c3c', '#2ecc71', '#3498db', '#f1c40f', '#9b59b6']; // Red, Green, Blue, Yellow, Purple
+const blockColors = [
+    '#e74c3c', // Red
+    '#2ecc71', // Green
+    '#3498db', // Blue
+    '#f1c40f', // Yellow
+    '#9b59b6', // Purple
+    '#e67e22', // Orange
+    '#1abc9c', // Teal
+    '#ecf0f1'  // White/Silver
+];
 
 const blockShapes = [
     { shape: [[1, 1, 1, 1]] },      // I型
@@ -39,28 +49,25 @@ function createEmptyBoard() {
 function spawnNewBlock() {
     const shapeIndex = Math.floor(Math.random() * blockShapes.length);
     const shapeData = blockShapes[shapeIndex];
-
     const colorIndex = Math.floor(Math.random() * blockColors.length);
     const randomColor = blockColors[colorIndex];
-    
     currentBlock = {
-        shape: shapeData.shape,
-        color: randomColor,
+        shape: shapeData.shape, color: randomColor,
         x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
         y: 0
     };
-
     if (checkCollision()) {
         alert("ゲームオーバー！");
         board = createEmptyBoard();
         startTime = performance.now();
+        score = 0;
+        updateUI(performance.now());
     }
 }
 
 function draw() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     board.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
@@ -69,17 +76,12 @@ function draw() {
             }
         });
     });
-
     if (currentBlock) {
         ctx.fillStyle = currentBlock.color;
         currentBlock.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value !== 0) {
-                    ctx.fillRect(
-                        (currentBlock.x + x) * CELL_SIZE,
-                        (currentBlock.y + y) * CELL_SIZE,
-                        CELL_SIZE - 1, CELL_SIZE - 1
-                    );
+                    ctx.fillRect((currentBlock.x + x) * CELL_SIZE, (currentBlock.y + y) * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
                 }
             });
         });
@@ -91,16 +93,18 @@ function update(time = 0) {
     const deltaTime = time - lastTime;
     lastTime = time;
     
-    const elapsedTime = Math.floor((time - startTime) / 1000);
-    timeDisplay.textContent = elapsedTime;
+    updateUI(time);
 
     dropCounter += deltaTime;
-    if (dropCounter > DROP_INTERVAL) {
-        moveBlockDown();
-    }
-    
+    if (dropCounter > DROP_INTERVAL) moveBlockDown();
     draw();
     requestAnimationFrame(update);
+}
+
+function updateUI(time = 0) {
+    const elapsedTime = Math.floor((time - startTime) / 1000);
+    timeDisplay.textContent = elapsedTime;
+    scoreDisplay.textContent = score;
 }
 
 function rotateBlock(dir) {
@@ -169,6 +173,14 @@ function checkCollision() {
 }
 
 function placeBlock() {
+    currentBlock.shape.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                board[currentBlock.y + y][currentBlock.x + x] = currentBlock.color;
+            }
+        });
+    });
+
     const placedCoords = [];
     currentBlock.shape.forEach((row, y) => {
         row.forEach((value, x) => {
@@ -177,56 +189,67 @@ function placeBlock() {
             }
         });
     });
-
-    const toClear = checkBlocksToClear(placedCoords, currentBlock.color);
-
-    placedCoords.forEach(coord => {
-        const isClearing = toClear.some(c => c.x === coord.x && c.y === coord.y);
-        if (!isClearing) {
-            board[coord.y][coord.x] = currentBlock.color;
-        }
-    });
-
-    if (toClear.length > 0) {
-        dropFloatingBlocks();
-    }
-}
-
-function checkBlocksToClear(coords, color) {
-    const toClear = [];
-    coords.forEach(coord => {
-        const { x, y } = coord;
-        if (!isValid(x, y)) return;
-        const { sameColorFaces, differentColorFaces } = countAdjacentFaces(x, y, color, coords);
-        if (sameColorFaces > differentColorFaces) {
-            toClear.push({ x, y });
-        }
-    });
-    return toClear;
-}
-
-function countAdjacentFaces(x, y, myColor, placedCoords) {
-    let sameColorFaces = 0;
-    let differentColorFaces = 0;
     
-    [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
-        const nx = x + dx;
-        const ny = y + dy;
+    const sameColorNeighbors = findSameColorNeighbors(placedCoords, currentBlock.color);
 
-        const isPartOfPlacedBlock = placedCoords.some(c => c.x === nx && c.y === ny);
-        if (isPartOfPlacedBlock) {
-            return;
-        }
+    if (sameColorNeighbors.length > 0) {
+        const coreClearSet = new Set();
+        placedCoords.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
+        sameColorNeighbors.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
+        
+        const finalClearSet = findCollateralDamage(coreClearSet);
 
-        if (isValid(nx, ny) && board[ny][nx] !== 0) {
-            if (board[ny][nx] === myColor) {
-                sameColorFaces++;
-            } else {
-                differentColorFaces++;
+        let sameColorCleared = 0;
+        let differentColorCleared = 0;
+        finalClearSet.forEach(coordStr => {
+            const [x, y] = coordStr.split(',').map(Number);
+            if (board[y][x] === currentBlock.color) {
+                sameColorCleared++;
+            } else if (board[y][x] !== 0) {
+                differentColorCleared++;
             }
-        }
+        });
+        score += sameColorCleared * 3;
+        score += differentColorCleared * 1;
+        
+        finalClearSet.forEach(coordStr => {
+            const [x, y] = coordStr.split(',').map(Number);
+            board[y][x] = 0;
+        });
+        
+        dropFloatingBlocks();
+    } 
+}
+
+function findSameColorNeighbors(coords, color) {
+    const neighbors = [];
+    const coordSet = new Set(coords.map(c => `${c.x},${c.y}`));
+    coords.forEach(c => {
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+            const nx = c.x + dx;
+            const ny = c.y + dy;
+            if (coordSet.has(`${nx},${ny}`)) return;
+            if (isValid(nx, ny) && board[ny][nx] === color) {
+                neighbors.push({ x: nx, y: ny });
+            }
+        });
     });
-    return { sameColorFaces, differentColorFaces };
+    return neighbors;
+}
+
+function findCollateralDamage(coreSet) {
+    const finalSet = new Set(coreSet);
+    coreSet.forEach(coordStr => {
+        const [x, y] = coordStr.split(',').map(Number);
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (isValid(nx, ny) && board[ny][nx] !== 0) {
+                finalSet.add(`${nx},${ny}`);
+            }
+        });
+    });
+    return finalSet;
 }
 
 function isValid(x, y) {
@@ -234,18 +257,71 @@ function isValid(x, y) {
 }
 
 function dropFloatingBlocks() {
-    for (let x = 0; x < BOARD_WIDTH; x++) {
-        let emptySpace = -1;
-        for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
-            if (board[y][x] === 0 && emptySpace === -1) {
-                emptySpace = y;
-            } else if (board[y][x] !== 0 && emptySpace !== -1) {
-                board[emptySpace][x] = board[y][x];
-                board[y][x] = 0;
-                emptySpace--;
+    const visited = new Set();
+    const floatingGroups = [];
+    for (let y = 0; y < BOARD_HEIGHT; y++) {
+        for (let x = 0; x < BOARD_WIDTH; x++) {
+            const coordStr = `${x},${y}`;
+            if (board[y][x] !== 0 && !visited.has(coordStr)) {
+                const group = findConnectedGroup(x, y, visited);
+                let isSupported = false;
+                for (const cell of group) {
+                    if (cell.y === BOARD_HEIGHT - 1 || (isValid(cell.x, cell.y + 1) && board[cell.y + 1][cell.x] !== 0 && !group.some(g => g.x === cell.x && g.y === cell.y + 1))) {
+                        isSupported = true;
+                        break;
+                    }
+                }
+                if (!isSupported) {
+                    floatingGroups.push(group);
+                }
             }
         }
     }
+    if (floatingGroups.length > 0) {
+        floatingGroups.forEach(group => {
+            group.forEach(cell => {
+                board[cell.y][cell.x] = 0;
+            });
+        });
+        floatingGroups.forEach(group => {
+            let dropDistance = 0;
+            let canDrop = true;
+            while (canDrop) {
+                dropDistance++;
+                for (const cell of group) {
+                    const nextY = cell.y + dropDistance;
+                    if (nextY >= BOARD_HEIGHT || (isValid(nextY, cell.x) && board[nextY][cell.x] !== 0)) {
+                        canDrop = false;
+                        break;
+                    }
+                }
+            }
+            dropDistance--;
+            group.forEach(cell => {
+                board[cell.y + dropDistance][cell.x] = cell.color;
+            });
+        });
+    }
+}
+
+function findConnectedGroup(startX, startY, visited) {
+    const group = [];
+    const queue = [{ x: startX, y: startY }];
+    visited.add(`${startX},${startY}`);
+    while (queue.length > 0) {
+        const current = queue.shift();
+        current.color = board[current.y][current.x];
+        group.push(current);
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+            const neighbor = { x: current.x + dx, y: current.y + dy };
+            const neighborStr = `${neighbor.x},${neighbor.y}`;
+            if (isValid(neighbor.x, neighbor.y) && board[neighbor.y][neighbor.x] !== 0 && !visited.has(neighborStr)) {
+                visited.add(neighborStr);
+                queue.push(neighbor);
+            }
+        });
+    }
+    return group;
 }
 
 // --- Event Listeners ---
