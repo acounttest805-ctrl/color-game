@@ -149,3 +149,10 @@ body {
     color: white;
     border-color: #6c757d;
 }
+
+/* ファイルの一番下に追加 */
+@media (max-width: 480px) {
+    :root {
+        --tile-size: 25px;
+    }
+}
