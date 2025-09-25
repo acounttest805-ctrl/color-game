@@ -1,4 +1,4 @@
-const CACHE_NAME = 'color-game-cache-v4'; // ★ キャッシュの名前
+const CACHE_NAME = 'color-game-cache-v5'; // ★ キャッシュの名前
 const urlsToCache = [
   '/',
   '/index.html',
@@ -60,4 +60,5 @@ self.addEventListener('fetch', event => {
       }
     )
   );
+
 });
