@@ -363,9 +363,16 @@ document.addEventListener('keydown', event => {
     else if (event.key === 'x' || event.key === 'X') rotateBlock(1);
 });
 
+// 移動ボタン
 document.getElementById('btn-left').addEventListener('click', () => moveBlockSide(-1));
 document.getElementById('btn-right').addEventListener('click', () => moveBlockSide(1));
-document.getElementById('btn-down').addEventListener('click', () => hardDrop());
+// 変更：▼ボタンをソフトドロップに変更
+document.getElementById('btn-down').addEventListener('click', () => moveBlockDown());
+
+// 追加：新しいアクションボタン
+document.getElementById('btn-rotate-left').addEventListener('click', () => rotateBlock(-1));
+document.getElementById('btn-hard-drop').addEventListener('click', () => hardDrop());
+document.getElementById('btn-rotate-right').addEventListener('click', () => rotateBlock(1));
 
 // --- Initial Start ---
 spawnNewBlock();
