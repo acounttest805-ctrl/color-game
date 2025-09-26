@@ -1,5 +1,6 @@
 // block.js
-import { BOARD_WIDTH, BOARD_HEIGHT, blockShapes, colorPalettes } from './constants.js';
+// ★★★ この行に CELL_SIZE を追加 ★★★
+import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, blockShapes, colorPalettes } from './constants.js';
 
 export function createNewBlock(ceilingY, mode) {
     const shapeIndex = Math.floor(Math.random() * blockShapes.length);
@@ -22,6 +23,7 @@ export function drawBlock(ctx, block) {
     block.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
+                // ここで CELL_SIZE が使われている
                 ctx.fillRect(
                     (block.x + x) * CELL_SIZE,
                     (block.y + y) * CELL_SIZE,
@@ -56,9 +58,9 @@ export function rotateBlock(block, board, ceilingY, dir) {
 
     let offset = 1;
     while (checkCollision(block, board, ceilingY)) {
-        block.x += offset;
+        currentBlock.x += offset; // グローバル変数を参照している可能性を考慮して修正
         offset = -(offset + (offset > 0 ? 1 : -1));
-        if (offset > block.shape[0].length) {
+        if (offset > block.shape[0].length + 2) { // 補正範囲を少し広げる
             block.shape = originalShape;
             block.x = originalX;
             return;

@@ -21,21 +21,10 @@ export function drawBoard(ctx, board, ceilingY) {
     }
 }
 
-// ... (消去ロジックのヘルパー関数群)
 function isValid(x, y) {
     return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT;
 }
 
-function findSameColorNeighbors(board, coords, color) { /* ... (実装は後述) ... */ }
-function findCollateralDamage(board, coreSet) { /* ... (実装は後述) ... */ }
-function dropFloatingBlocks(board) { /* ... (実装は後述) ... */ }
-
-export function placeBlockOnBoard(board, block) {
-    // ... (実装は後述) ...
-}
-
-// === ヘルパー関数の完全な実装 ===
-// (ここに、以前のscript.jsからコピペして、引数に`board`を追加する)
 
 function findSameColorNeighbors(board, coords, color) {
     const neighbors = [];
