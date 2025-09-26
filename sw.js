@@ -1,4 +1,4 @@
-const CACHE_NAME = 'color-game-cache-v1'; // 更新する際はここのバージョンを上げる
+const CACHE_NAME = 'color-game-cache-v1.1'; // 更新する際はここのバージョンを上げる
 const urlsToCache = [
   '/',
   '/index.html',
