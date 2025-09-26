@@ -1,3 +1,9 @@
+:root {
+    /* JavaScriptからサイズを制御するための変数 */
+    --chip-size: 60px;
+    --chip-gap: 10px;
+}
+
 body {
     font-family: sans-serif;
     display: flex;
@@ -13,16 +19,16 @@ body {
 .game-wrapper {
     text-align: center;
     background-color: #fff;
-    padding: 2em;
+    padding: 1.5em;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     max-width: 90%;
-    /* ★追加: コンテナがはみ出ないようにする */
-    overflow-x: hidden;
+    width: 500px;
+    box-sizing: border-box;
 }
 
 .info-display {
-    margin-bottom: 2em;
+    margin-bottom: 1.5em;
 }
 .info-display h1 {
     margin: 0 0 0.5em 0;
@@ -31,28 +37,17 @@ body {
 /* ★★★ ここを修正 ★★★ */
 #chip-container {
     display: flex;
-    justify-content: flex-start; /* 左詰めにする */
-    gap: 10px;
+    justify-content: center;
+    gap: var(--chip-gap);
     padding: 10px;
     background-color: #e9ecef;
     border-radius: 8px;
-    min-height: 80px;
-    /* flex-wrap: wrap;  ← この行を削除 */
-    overflow-x: auto; /* ★追加: 横スクロールを有効にする */
-    
-    /* スクロールバーを非表示にする */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-#chip-container::-webkit-scrollbar {
-    display: none;
 }
 
 
 .color-chip {
-    width: 60px;
-    height: 60px;
-    /* ★追加: チップが縮まないようにする */
+    width: var(--chip-size);
+    height: var(--chip-size);
     flex-shrink: 0;
     border: 2px solid #fff;
     border-radius: 8px;
@@ -145,11 +140,4 @@ body {
 }
 .home-button-modal {
     background-color: #6c757d; color: white; border-color: #6c757d;
-}
-
-@media (max-width: 480px) {
-    .color-chip {
-        width: 40px;
-        height: 40px;
-    }
 }

@@ -25,6 +25,29 @@ const resultTitle = document.getElementById('result-title');
 const resultMessage = document.getElementById('result-message');
 const retryButton = document.getElementById('retry-button');
 
+// ★★★ ここを修正 ★★★
+// --- チップサイズ調整ロジック (1行固定バージョン) ---
+function adjustChipSize(chipCount) {
+    setTimeout(() => {
+        const containerPadding = 20;
+        const containerWidth = chipContainer.offsetWidth - containerPadding;
+        
+        const gap = 10;
+        const minChipSize = 25;
+        const maxChipSize = 60;
+
+        // 常に1行に収まるようにチップサイズを計算
+        let chipSize = (containerWidth - (gap * (chipCount - 1))) / chipCount;
+
+        // 最小サイズと最大サイズの範囲内に収める
+        chipSize = Math.max(minChipSize, Math.min(chipSize, maxChipSize));
+
+        const root = document.documentElement;
+        root.style.setProperty('--chip-size', `${chipSize}px`);
+        root.style.setProperty('--chip-gap', `${gap}px`);
+    }, 0);
+}
+
 // --- ボタンの表示/非表示を管理する関数 ---
 function updateButtonVisibility(state) {
     if (state === 'playing') {
@@ -45,6 +68,9 @@ function setupStage(stageNum) {
     updateButtonVisibility('playing');
     
     const stageData = stages[stageNum];
+
+    adjustChipSize(stageData.count);
+
     correctOrder = generateGradient(stageData.start, stageData.end, stageData.count);
     reversedCorrectOrder = [...correctOrder].reverse();
     
@@ -69,7 +95,6 @@ function addDragDropListeners() {
     let draggedItem = null;
 
     chips.forEach(chip => {
-        // --- PCのマウス操作用 ---
         chip.addEventListener('dragstart', () => {
             draggedItem = chip;
             setTimeout(() => chip.classList.add('dragging'), 0);
@@ -78,11 +103,10 @@ function addDragDropListeners() {
         chip.addEventListener('dragend', () => {
             if (draggedItem) {
                 draggedItem.classList.remove('dragging');
-                draggedItem = null; // ★★★ この1行を追加 ★★★
+                draggedItem = null;
             }
         });
 
-        // --- スマホのタッチ操作用 ---
         chip.addEventListener('touchstart', (e) => {
             draggedItem = e.target;
             draggedItem.classList.add('dragging');
@@ -96,7 +120,6 @@ function addDragDropListeners() {
         });
     });
 
-    // --- 共通の移動処理 ---
     chipContainer.addEventListener('dragover', e => {
         e.preventDefault();
         const afterElement = getDragAfterElement(chipContainer, e.clientX);
@@ -212,7 +235,7 @@ retryButton.addEventListener('click', startGame);
 startGame();
 
 
-// --- ここから下は変更のないヘルパー関数群です ---
+// --- ヘルパー関数群 ---
 function rgbToHex(rgb) {
     if (!rgb) return '';
     if (rgb.startsWith('#')) return rgb;
