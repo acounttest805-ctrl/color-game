@@ -27,6 +27,19 @@
                     <p>誰にでも識別しやすい、はっきりとした色の配色でプレイします。</p>
                 </button>
             </div>
+            
+            <!-- ★★★ ランキング表示エリアを2つに分割 ★★★ -->
+            <div class="ranking-wrapper">
+                <div id="ranking-container-alltime" class="ranking-container">
+                    <h2>全期間ランキング</h2>
+                    <ol id="ranking-list-alltime"><li>Loading...</li></ol>
+                </div>
+                <div id="ranking-container-weekly" class="ranking-container">
+                    <h2>今週のランキング</h2>
+                    <ol id="ranking-list-weekly"><li>Loading...</li></ol>
+                </div>
+            </div>
+
             <a href="../../index.html" class="home-button">ホームに戻る</a>
         </div>
     </div>
@@ -52,11 +65,28 @@
         </div>
     </div>
 
-    <!-- ★★★ ここを修正 ★★★ -->
-    <!-- ゲームのメインスクリプトをモジュールとして読み込む -->
-    <script type="module" src="./js/main.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+      import { initGame } from "./js/main.js";
 
-    <!-- PWAの更新検知スクリプト -->
+      // ★★★ あなたのFirebaseプロジェクト設定情報をここに貼り付け ★★★
+      const firebaseConfig = {
+  apiKey: "AIzaSyDyxFiYVC7ueBmec6wph_AV4FdgNdRAkb0",
+  authDomain: "color-game-5041b.firebaseapp.com",
+  projectId: "color-game-5041b",
+  storageBucket: "color-game-5041b.firebasestorage.app",
+  messagingSenderId: "388406504889",
+  appId: "1:388406504889:web:287ff42458ad7ecb281a68",
+  measurementId: "G-CGQ03VX4X1"
+};
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      initGame(db);
+    </script>
+    
     <script>
       let newWorker;
       if ('serviceWorker' in navigator) {
@@ -73,7 +103,6 @@
                   });
               });
           });
-
           let refreshing;
           navigator.serviceWorker.addEventListener('controllerchange', () => {
               if (refreshing) return;
