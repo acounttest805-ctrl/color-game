@@ -32,7 +32,6 @@
     </div>
 
     <div id="game-screen-wrapper" class="hidden">
-        <!-- ★★★ ここを修正 ★★★ -->
         <div id="info-bar">
             <span id="time-container">Time: <span id="time-display">0:00</span></span>
             <span id="score-container">Score: <span id="score-display">0</span></span>
@@ -53,37 +52,35 @@
         </div>
     </div>
 
-    <script src="./script.js"></script>
+    <!-- ★★★ ここを修正 ★★★ -->
+    <!-- ゲームのメインスクリプトをモジュールとして読み込む -->
+    <script type="module" src="./js/main.js"></script>
+
+    <!-- PWAの更新検知スクリプト -->
     <script>
-  let newWorker;
-
-  // ゲーム画面では更新通知UIは表示しない（挙動をシンプルにするため）
-  // もし表示したい場合は、ホーム画面と同じcreateUpdateUI関数をここに作る
-
-  if ('serviceWorker' in navigator) {
-      // パスを2階層上に変更
-      navigator.serviceWorker.register('../../sw.js').then(reg => {
-          reg.addEventListener('updatefound', () => {
-              newWorker = reg.installing;
-              newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                      const updateSetting = localStorage.getItem('updateSetting') || 'manual';
-                      // ゲームプレイ中は邪魔しないよう、自動更新のみ対応
-                      if (updateSetting === 'auto') {
-                          newWorker.postMessage({ action: 'skipWaiting' });
+      let newWorker;
+      if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('../../sw.js').then(reg => {
+              reg.addEventListener('updatefound', () => {
+                  newWorker = reg.installing;
+                  newWorker.addEventListener('statechange', () => {
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                          const updateSetting = localStorage.getItem('updateSetting') || 'manual';
+                          if (updateSetting === 'auto') {
+                              newWorker.postMessage({ action: 'skipWaiting' });
+                          }
                       }
-                  }
+                  });
               });
           });
-      });
 
-      let refreshing;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
-          window.location.reload();
-          refreshing = true;
-      });
-  }
-</script>
+          let refreshing;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+              if (refreshing) return;
+              window.location.reload();
+              refreshing = true;
+          });
+      }
+    </script>
 </body>
 </html>
