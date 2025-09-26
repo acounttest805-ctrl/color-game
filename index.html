@@ -11,6 +11,42 @@
     <link rel="icon" href="icon.png">
 
     <link rel="stylesheet" href="style.css">
+
+    <!-- ★★★ 更新通知用のスタイルを追加 ★★★ -->
+    <style>
+        #update-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        #update-toast button {
+            background-color: white;
+            color: #28a745;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .settings-panel {
+            margin-top: 2em;
+            padding: 1em;
+            background-color: #e2e6ea;
+            border-radius: 8px;
+        }
+        .settings-panel h4 { margin: 0 0 0.5em 0; color: #333; }
+        .settings-panel label { display: block; margin-bottom: 0.5em; color: #555; font-size: 0.9em; }
+    </style>
 </head>
 <body>
     <header>
@@ -153,16 +189,83 @@
 
     <footer>
         <p>【注意】このゲームは医学的な診断を行うものではありません。ご自身の特性について詳しく知りたい場合は、専門の医療機関にご相談ください。</p>
+        
+        <!-- ★★★ 設定UIを追加 ★★★ -->
+        <div class="settings-panel">
+            <h4>更新設定</h4>
+            <label>
+                <input type="radio" name="update-setting" value="manual">
+                新しいバージョンがある時に通知する（推奨）
+            </label>
+            <label>
+                <input type="radio" name="update-setting" value="auto">
+                常に自動で最新バージョンに更新する
+            </label>
+        </div>
     </footer>
 
     <button id="reload-button" onclick="location.reload();">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
     </button>
     
+    <!-- ★★★ 更新検知と設定管理のスクリプト ★★★ -->
     <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
+      let newWorker; // 新しいService Workerを保持する変数
+
+      function createUpdateUI() {
+          // 既に通知があれば何もしない
+          if (document.getElementById('update-toast')) return;
+
+          const updateToast = document.createElement('div');
+          updateToast.id = 'update-toast';
+          updateToast.innerHTML = `
+              <span>新しいバージョンが利用可能です。</span>
+              <button id="update-btn">更新</button>
+          `;
+          document.body.appendChild(updateToast);
+          
+          document.getElementById('update-btn').addEventListener('click', () => {
+              newWorker.postMessage({ action: 'skipWaiting' });
+          });
       }
+
+      if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('sw.js').then(reg => {
+              reg.addEventListener('updatefound', () => {
+                  newWorker = reg.installing;
+                  newWorker.addEventListener('statechange', () => {
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                          const updateSetting = localStorage.getItem('updateSetting') || 'manual';
+                          if (updateSetting === 'auto') {
+                              newWorker.postMessage({ action: 'skipWaiting' });
+                          } else {
+                              createUpdateUI();
+                          }
+                      }
+                  });
+              });
+          });
+
+          let refreshing;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+              if (refreshing) return;
+              window.location.reload();
+              refreshing = true;
+          });
+      }
+
+      // --- 更新設定の管理 ---
+      const updateSettingRadios = document.querySelectorAll('input[name="update-setting"]');
+      const savedSetting = localStorage.getItem('updateSetting') || 'manual';
+      const currentRadio = document.querySelector(`input[value="${savedSetting}"]`);
+      if (currentRadio) {
+          currentRadio.checked = true;
+      }
+      updateSettingRadios.forEach(radio => {
+          radio.addEventListener('change', (event) => {
+              localStorage.setItem('updateSetting', event.target.value);
+          });
+      });
     </script>
 </body>
 </html>

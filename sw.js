@@ -1,17 +1,15 @@
-const CACHE_NAME = 'color-game-cache-v5'; // ★ キャッシュの名前
+const CACHE_NAME = 'color-game-cache-v1'; // 更新する際はここのバージョンを上げる
 const urlsToCache = [
   '/',
   '/index.html',
   '/style.css',
   '/icon.png',
   '/manifest.json',
-  // ここにキャッシュしたい他のアセット（画像など）を追加できます
-  // '/assets/find-the-color.png',
-  // ...
+  // ゲームファイルを追加（例）
   '/games/find-the-color/index.html',
   '/games/find-the-color/style.css',
   '/games/find-the-color/script.js',
-  // ... 他のゲームのファイルも同様に追加 ...
+  // ...他のゲームのファイルも同様に追加...
 ];
 
 // インストール時にキャッシュを作成
@@ -20,10 +18,8 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Opened cache');
-        // 上記リストのファイルをすべてキャッシュする
-        // 失敗するとインストールが完了しないので、必須ファイルのみが良い
         return cache.addAll(urlsToCache).catch(error => {
-          console.error('Failed to cache files:', error);
+          console.error('Failed to cache files during install:', error);
         });
       })
   );
@@ -51,14 +47,18 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // キャッシュがあればそれを返す
         if (response) {
           return response;
         }
-        // キャッシュがなければネットワークにリクエスト
         return fetch(event.request);
       }
     )
   );
+});
 
+// ★★★ メッセージを受け取って待機状態をスキップするリスナー ★★★
+self.addEventListener('message', event => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });
