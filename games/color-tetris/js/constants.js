@@ -1,4 +1,4 @@
-// constants.js
+// js/constants.js
 export const BOARD_WIDTH = 13;
 export const BOARD_HEIGHT = 18;
 export const CELL_SIZE = 30;
