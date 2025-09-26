@@ -2,12 +2,9 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- viewport を user-scalable=no なしに修正 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- title をゲーム名に修正 -->
     <title>Avoid & Collect</title> 
 
-    <!-- PWA & Icon Links -->
     <link rel="manifest" href="../../manifest.json">
     <meta name="theme-color" content="#1a1a1a">
     <link rel="apple-touch-icon" href="../../icon.png">
@@ -17,7 +14,6 @@
 </head>
 <body>
     <div id="game-wrapper">
-        <!-- UIオーバーレイ -->
         <div id="ui-overlay">
             <div id="life-container">
                 <span id="life-icons"></span>
@@ -28,7 +24,6 @@
             </div>
         </div>
 
-        <!-- ゲームスクリーン -->
         <div id="game-screen">
             <div id="player"></div>
             <div id="progress-bar-container">
@@ -36,14 +31,12 @@
             </div>
         </div>
 
-        <!-- 操作ボタン -->
         <div id="controls">
             <button id="btn-left">◀</button>
             <button id="btn-right">▶</button>
         </div>
     </div>
 
-    <!-- 結果表示モーダル -->
     <div id="result-modal" class="hidden">
         <div class="modal-content">
             <h2 id="result-title"></h2>
@@ -55,37 +48,33 @@
         </div>
     </div>
 
-    <script src="./script.js"></script>
+    <script type="module" src="./js/main.js"></script>
+
+    <!-- ★★★ ご指摘の通り、こちらの正しいスクリプトが必要です ★★★ -->
     <script>
-  let newWorker;
-
-  // ゲーム画面では更新通知UIは表示しない（挙動をシンプルにするため）
-  // もし表示したい場合は、ホーム画面と同じcreateUpdateUI関数をここに作る
-
-  if ('serviceWorker' in navigator) {
-      // パスを2階層上に変更
-      navigator.serviceWorker.register('../../sw.js').then(reg => {
-          reg.addEventListener('updatefound', () => {
-              newWorker = reg.installing;
-              newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                      const updateSetting = localStorage.getItem('updateSetting') || 'manual';
-                      // ゲームプレイ中は邪魔しないよう、自動更新のみ対応
-                      if (updateSetting === 'auto') {
-                          newWorker.postMessage({ action: 'skipWaiting' });
+      let newWorker;
+      if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('../../sw.js').then(reg => {
+              reg.addEventListener('updatefound', () => {
+                  newWorker = reg.installing;
+                  newWorker.addEventListener('statechange', () => {
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                          const updateSetting = localStorage.getItem('updateSetting') || 'manual';
+                          if (updateSetting === 'auto') {
+                              newWorker.postMessage({ action: 'skipWaiting' });
+                          }
                       }
-                  }
+                  });
               });
           });
-      });
 
-      let refreshing;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
-          window.location.reload();
-          refreshing = true;
-      });
-  }
-</script>
+          let refreshing;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+              if (refreshing) return;
+              window.location.reload();
+              refreshing = true;
+          });
+      }
+    </script>
 </body>
 </html>
