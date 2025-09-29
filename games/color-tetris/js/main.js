@@ -2,17 +2,18 @@
 import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, colorPalettes, blockShapes, CURRENT_SEASON, SEASONS } from './constants.js';
 import { ui } from './ui.js';
 import { initFirebase, submitScore, getRankings } from './firebase.js';
+import { getGuestUserId } from './crypto.js';
 
 const ctx = ui.canvas.getContext('2d');
 
 let gameState = {};
 let selectedSeason = CURRENT_SEASON;
 
+// --- メインの初期化関数 ---
 export function initGame(db) {
     initFirebase(db);
 
     const seasonSelect = document.getElementById('season-select');
-    // プルダウンの重複作成を防ぐ
     if (seasonSelect.options.length === 0) {
         for (const seasonNum in SEASONS) {
             const option = document.createElement('option');
@@ -63,7 +64,8 @@ function startGame(mode) {
         currentBlock: null, score: 0, startTime: 0, lastTime: 0,
         dropCounter: 0, dropInterval: 700, ceilingY: 0,
         gameMode: mode, animationFrameId: null,
-        season: CURRENT_SEASON // ★現在のシーズンでゲーム開始
+        season: CURRENT_SEASON,
+        isGameOver: false
     };
     
     ui.canvas.width = BOARD_WIDTH * CELL_SIZE;
@@ -77,10 +79,10 @@ function startGame(mode) {
 async function gameOver() {
     if (gameState.isGameOver) return;
     gameState.isGameOver = true;
+    
     cancelAnimationFrame(gameState.animationFrameId);
     gameState.animationFrameId = null;
 
-    // 現在のシーズンのランキングと比較
     const rankings = await getRankings(gameState.season);
     const lowestAllTime = rankings.allTime.length < 5 ? 0 : rankings.allTime[rankings.allTime.length - 1].score;
     const lowestWeekly = rankings.weekly.length < 5 ? 0 : rankings.weekly[rankings.weekly.length - 1].score;
@@ -91,7 +93,8 @@ async function gameOver() {
             "Player"
         );
         if (playerName !== null) {
-            await submitScore(playerName, gameState.score, gameState.gameMode, gameState.season);
+            const encodedId = getGuestUserId();
+            await submitScore(encodedId, playerName, gameState.score, gameState.gameMode, gameState.season);
         }
     } else {
         alert(`ゲームオーバー！\nスコア: ${gameState.score}`);
@@ -243,6 +246,7 @@ function rotateBlock(dir) {
     if (dir > 0) newShape.forEach(row => row.reverse());
     else newShape.reverse();
     block.shape = newShape;
+
     let offset = 1;
     while (checkCollision()) {
         block.x += offset;
