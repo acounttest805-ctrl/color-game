@@ -2,16 +2,22 @@
 import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, colorPalettes, blockShapes, CURRENT_SEASON, SEASONS } from './constants.js';
 import { ui } from './ui.js';
 import { initFirebase, submitScore, getRankings } from './firebase.js';
-import { getGuestUserId } from './crypto.js';
 
 const ctx = ui.canvas.getContext('2d');
+
+const seasonNameDisplay = document.getElementById('season-name-display');
+const seasonPeriodDisplay = document.getElementById('season-period-display');
+const toggleRankingBtn = document.getElementById('toggle-ranking-btn');
+const rankingControls = document.getElementById('ranking-controls');
 
 let gameState = {};
 let selectedSeason = CURRENT_SEASON;
 
-// --- メインの初期化関数 ---
 export function initGame(db) {
     initFirebase(db);
+
+    seasonNameDisplay.textContent = `${SEASONS[CURRENT_SEASON].name} 開催中`;
+    seasonPeriodDisplay.textContent = SEASONS[CURRENT_SEASON].period;
 
     const seasonSelect = document.getElementById('season-select');
     if (seasonSelect.options.length === 0) {
@@ -26,7 +32,8 @@ export function initGame(db) {
     
     seasonSelect.addEventListener('change', (e) => {
         selectedSeason = parseInt(e.target.value, 10);
-        showTitleScreen();
+        // ★変更: ランキング表示状態を維持したまま更新
+        updateRankingDisplay();
     });
 
     document.getElementById('rule-button').addEventListener('click', () => {
@@ -45,7 +52,19 @@ export function initGame(db) {
     document.getElementById('btn-hard-drop').addEventListener('click', () => hardDrop());
     document.getElementById('btn-rotate-right').addEventListener('click', () => rotateBlock(1));
 
+    toggleRankingBtn.addEventListener('click', () => {
+        rankingControls.classList.toggle('hidden');
+        const isHidden = rankingControls.classList.contains('hidden');
+        toggleRankingBtn.textContent = isHidden ? 'ランキングを見る' : 'ランキングを隠す';
+    });
+
     showTitleScreen();
+}
+
+// ★追加: ランキング表示更新専用の関数
+async function updateRankingDisplay() {
+    const rankings = await getRankings(selectedSeason);
+    ui.displayRankings(rankings, SEASONS[selectedSeason].name);
 }
 
 async function showTitleScreen() {
@@ -54,8 +73,12 @@ async function showTitleScreen() {
         cancelAnimationFrame(gameState.animationFrameId);
         gameState.animationFrameId = null;
     }
-    const rankings = await getRankings(selectedSeason);
-    ui.displayRankings(rankings, SEASONS[selectedSeason].name);
+    
+    updateRankingDisplay(); // ランキング表示を呼び出す
+    
+    // タイトル画面に戻ってきたら、ランキングを非表示に戻す
+    rankingControls.classList.add('hidden');
+    toggleRankingBtn.textContent = 'ランキングを見る';
 }
 
 function startGame(mode) {
@@ -93,7 +116,7 @@ async function gameOver() {
             "Player"
         );
         if (playerName !== null) {
-            const encodedId = getGuestUserId();
+            const encodedId = getGuestUserId(); // crypto.jsから
             await submitScore(encodedId, playerName, gameState.score, gameState.gameMode, gameState.season);
         }
     } else {

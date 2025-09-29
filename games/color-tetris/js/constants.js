@@ -3,15 +3,17 @@ export const BOARD_WIDTH = 13;
 export const BOARD_HEIGHT = 18;
 export const CELL_SIZE = 30;
 
-export const CURRENT_SEASON = 0; // 現在はシーズン0
+export const CURRENT_SEASON = 0;
 
 export const SEASONS = {
     0: {
         name: "シーズン0",
+        period: "2025/9/28～10/2",
         description: "同じ色のブロックを隣接させると、そのグループと、周囲の異色ブロックも消滅するクラシックルール。"
     },
     1: {
         name: "シーズン1",
+        period: "開催期間未定",
         description: "新しいルールは準備中です。お楽しみに！"
     }
 };
