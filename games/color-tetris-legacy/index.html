@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Tetris Legacy</title>
+    
+    <link rel="manifest" href="../../manifest.json">
+    <meta name="theme-color" content="#3498db">
+    <link rel="apple-touch-icon" href="../../icon.png">
+    <link rel="icon" href="../../icon.png">
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div id="title-screen">
+        <div class="title-content-legacy">
+            <h1>Color Tetris <span class="legacy-badge">Legacy</span></h1>
+            <p>過去のシーズンのルールで遊べます。</p>
+            
+            <div id="legacy-selection-container">
+                <!-- JavaScriptでボタンが生成されます -->
+            </div>
+
+            <a href="../../index.html" class="home-button">ホームに戻る</a>
+        </div>
+    </div>
+
+    <div id="game-screen-wrapper" class="hidden">
+        <!-- ★★★ ここにinfo-barを追加 ★★★ -->
+        <div id="info-bar">
+            <span>Time: <span id="time-display">0:00</span></span>
+            <span>Score: <span id="score-display">0</span></span>
+            <button id="back-to-title-btn">タイトルへ</button>
+        </div>
+
+        <div id="game-container">
+            <canvas id="game-board"></canvas>
+        </div>
+
+        <div id="controls">
+            <button id="btn-left">◀</button>
+            <button id="btn-down">▼</button>
+            <button id="btn-right">▶</button>
+            <button id="btn-rotate-left">⟲</button>
+            <button id="btn-hard-drop">⤓</button>
+            <button id="btn-rotate-right">⟳</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initGame } from './js/main.js';
+        initGame();
+    </script>
+    
+    <script>
+      let newWorker;
+      if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('../../sw.js').then(reg => {
+              reg.addEventListener('updatefound', () => {
+                  newWorker = reg.installing;
+                  newWorker.addEventListener('statechange', () => {
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                          const updateSetting = localStorage.getItem('updateSetting') || 'manual';
+                          if (updateSetting === 'auto') {
+                              newWorker.postMessage({ action: 'skipWaiting' });
+                          }
+                      }
+                  });
+              });
+          });
+          let refreshing;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+              if (refreshing) return;
+              window.location.reload();
+              refreshing = true;
+          });
+      }
+    </script>
+</body>
+</html>
