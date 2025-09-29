@@ -2,6 +2,13 @@
 import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, colorPalettes, blockShapes, CURRENT_SEASON, SEASONS } from './constants.js';
 import { ui } from './ui.js';
 import { initFirebase, submitScore, getRankings } from './firebase.js';
+import { getGuestUserId } from './crypto.js'; // crypto.jsからインポート
+
+// block.js から必要な関数をインポート
+import { createNewBlock, drawBlock, checkCollision, rotateBlock } from './block.js';
+// board.js から必要な関数をインポート
+import { createEmptyBoard, drawBoard, placeBlockOnBoard } from './board.js';
+
 
 const ctx = ui.canvas.getContext('2d');
 
@@ -32,7 +39,6 @@ export function initGame(db) {
     
     seasonSelect.addEventListener('change', (e) => {
         selectedSeason = parseInt(e.target.value, 10);
-        // ★変更: ランキング表示状態を維持したまま更新
         updateRankingDisplay();
     });
 
@@ -48,9 +54,9 @@ export function initGame(db) {
     document.getElementById('btn-left').addEventListener('click', () => moveBlockSide(-1));
     document.getElementById('btn-right').addEventListener('click', () => moveBlockSide(1));
     document.getElementById('btn-down').addEventListener('click', () => moveBlockDown());
-    document.getElementById('btn-rotate-left').addEventListener('click', () => rotateBlock(-1));
+    document.getElementById('btn-rotate-left').addEventListener('click', () => rotateBlockWrapper(-1)); // ラッパー関数を使用
     document.getElementById('btn-hard-drop').addEventListener('click', () => hardDrop());
-    document.getElementById('btn-rotate-right').addEventListener('click', () => rotateBlock(1));
+    document.getElementById('btn-rotate-right').addEventListener('click', () => rotateBlockWrapper(1)); // ラッパー関数を使用
 
     toggleRankingBtn.addEventListener('click', () => {
         rankingControls.classList.toggle('hidden');
@@ -61,7 +67,6 @@ export function initGame(db) {
     showTitleScreen();
 }
 
-// ★追加: ランキング表示更新専用の関数
 async function updateRankingDisplay() {
     const rankings = await getRankings(selectedSeason);
     ui.displayRankings(rankings, SEASONS[selectedSeason].name);
@@ -74,16 +79,15 @@ async function showTitleScreen() {
         gameState.animationFrameId = null;
     }
     
-    updateRankingDisplay(); // ランキング表示を呼び出す
+    updateRankingDisplay();
     
-    // タイトル画面に戻ってきたら、ランキングを非表示に戻す
     rankingControls.classList.add('hidden');
     toggleRankingBtn.textContent = 'ランキングを見る';
 }
 
 function startGame(mode) {
     gameState = {
-        board: Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0)),
+        board: createEmptyBoard(), // board.js の createEmptyBoard を使用
         currentBlock: null, score: 0, startTime: 0, lastTime: 0,
         dropCounter: 0, dropInterval: 700, ceilingY: 0,
         gameMode: mode, animationFrameId: null,
@@ -107,8 +111,11 @@ async function gameOver() {
     gameState.animationFrameId = null;
 
     const rankings = await getRankings(gameState.season);
+    // ランキングの最低スコアを正しく取得する
     const lowestAllTime = rankings.allTime.length < 5 ? 0 : rankings.allTime[rankings.allTime.length - 1].score;
-    const lowestWeekly = rankings.weekly.length < 5 ? 0 : rankings.weekly[rankings.weekly.length - 1].score;
+    const lowestWeekly = rankings.weekly.length < 5 ? 0 : rankings.weekly[rankings.weekly.length - 1].score; // ★修正
+
+    let promptClosed = false; // プロンプトが閉じられたかどうかのフラグ
 
     if (gameState.score > 0 && (gameState.score > lowestAllTime || gameState.score > lowestWeekly)) {
         const playerName = prompt(
@@ -116,13 +123,19 @@ async function gameOver() {
             "Player"
         );
         if (playerName !== null) {
-            const encodedId = getGuestUserId(); // crypto.jsから
+            const encodedId = getGuestUserId();
             await submitScore(encodedId, playerName, gameState.score, gameState.gameMode, gameState.season);
         }
+        promptClosed = true;
     } else {
         alert(`ゲームオーバー！\nスコア: ${gameState.score}`);
+        promptClosed = true;
     }
-    showTitleScreen();
+
+    // プロンプトまたはアラートが閉じられた後にタイトル画面に戻る
+    if (promptClosed) {
+        showTitleScreen(); // ★修正: ゲームオーバー後にタイトル画面に戻る
+    }
 }
 
 function gameLoop(time = 0) {
@@ -146,28 +159,9 @@ function gameLoop(time = 0) {
 function draw() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
-    if (gameState.ceilingY > 0) {
-        ctx.fillStyle = '#333';
-        ctx.fillRect(0, 0, ui.canvas.width, gameState.ceilingY * CELL_SIZE);
-    }
-    gameState.board.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                ctx.fillStyle = value;
-                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
-            }
-        });
-    });
-    if (gameState.currentBlock) {
-        ctx.fillStyle = gameState.currentBlock.color;
-        gameState.currentBlock.shape.forEach((row, y) => {
-            row.forEach((value, x) => {
-                if (value !== 0) {
-                    ctx.fillRect((gameState.currentBlock.x + x) * CELL_SIZE, (gameState.currentBlock.y + y) * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
-                }
-            });
-        });
-    }
+    
+    drawBoard(ctx, gameState.board, gameState.ceilingY); // board.js の drawBoard を使用
+    drawBlock(ctx, gameState.currentBlock); // block.js の drawBlock を使用
 }
 
 function checkDifficultyUpdate(elapsedTime) {
@@ -179,15 +173,11 @@ function checkDifficultyUpdate(elapsedTime) {
 
 function spawnNewBlock() {
     if (gameState.isGameOver) return;
-    const colors = colorPalettes[gameState.gameMode];
-    const shapeData = blockShapes[Math.floor(Math.random() * blockShapes.length)];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    gameState.currentBlock = {
-        shape: shapeData.shape, color: randomColor,
-        x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
-        y: gameState.ceilingY
-    };
-    if (checkCollision()) {
+    // block.js の createNewBlock を使用
+    gameState.currentBlock = createNewBlock(gameState.ceilingY, gameState.gameMode);
+    
+    // block.js の checkCollision を使用
+    if (checkCollision(gameState.currentBlock, gameState.board, gameState.ceilingY)) {
         gameOver();
     }
 }
@@ -195,8 +185,9 @@ function spawnNewBlock() {
 function moveBlockDown() {
     if (!gameState.currentBlock || gameState.isGameOver) return;
     gameState.currentBlock.y++;
-    if (checkCollision()) {
-        gameState.currentBlock.y--;
+    // block.js の checkCollision を使用
+    if (checkCollision(gameState.currentBlock, gameState.board, gameState.ceilingY)) {
+        gameState.currentBlock.y--; // 衝突したら一つ戻す
         placeBlock();
         spawnNewBlock();
     }
@@ -205,195 +196,38 @@ function moveBlockDown() {
 
 function placeBlock() {
     if (gameState.isGameOver) return;
-    const block = gameState.currentBlock;
-    block.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                gameState.board[block.y + y][block.x + x] = block.color;
-            }
-        });
-    });
-    const placedCoords = [];
-    block.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                placedCoords.push({ x: block.x + x, y: block.y + y });
-            }
-        });
-    });
-    const sameColorNeighbors = findSameColorNeighbors(placedCoords, block.color);
-    if (sameColorNeighbors.length > 0) {
-        const coreClearSet = new Set();
-        placedCoords.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
-        sameColorNeighbors.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
-        const finalClearSet = findCollateralDamage(coreClearSet);
-        let sameColorCleared = 0, differentColorCleared = 0;
-        finalClearSet.forEach(coordStr => {
-            const [x, y] = coordStr.split(',').map(Number);
-            if (gameState.board[y][x] === block.color) sameColorCleared++;
-            else if (gameState.board[y][x] !== 0) differentColorCleared++;
-        });
-        gameState.score += (sameColorCleared * 3) + (differentColorCleared * 1);
-        finalClearSet.forEach(coordStr => {
-            const [x, y] = coordStr.split(',').map(Number);
-            gameState.board[y][x] = 0;
-        });
-        dropFloatingBlocks();
-    }
+    // board.js の placeBlockOnBoard を使用し、戻り値のスコアを加算
+    const clearedScore = placeBlockOnBoard(gameState.board, gameState.currentBlock);
+    gameState.score += clearedScore;
 }
 
-function checkCollision() {
-    const block = gameState.currentBlock;
-    const board = gameState.board;
-    const ceilingY = gameState.ceilingY;
-    if (!block) return true;
-    for (let y = 0; y < block.shape.length; y++) {
-        for (let x = 0; x < block.shape[y].length; x++) {
-            if (block.shape[y][x] !== 0) {
-                let newX = block.x + x;
-                let newY = block.y + y;
-                if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT || newY < ceilingY) return true;
-                if (board[newY] && board[newY][newX] !== 0) return true;
-            }
-        }
-    }
-    return false;
-}
+// checkCollision, findSameColorNeighbors, findCollateralDamage, isValid, dropFloatingBlocks, findConnectedGroup
+// これらは main.js から削除し、board.js および block.js からインポートされた関数が使用されます。
 
-function rotateBlock(dir) {
-    const block = gameState.currentBlock;
-    if (!block || gameState.isGameOver) return;
-    const originalShape = JSON.parse(JSON.stringify(block.shape));
-    const originalX = block.x;
-    const newShape = block.shape[0].map((_, colIndex) => block.shape.map(row => row[colIndex]));
-    if (dir > 0) newShape.forEach(row => row.reverse());
-    else newShape.reverse();
-    block.shape = newShape;
-
-    let offset = 1;
-    while (checkCollision()) {
-        block.x += offset;
-        offset = -(offset + (offset > 0 ? 1 : -1));
-        if (Math.abs(offset) > block.shape[0].length + 2) {
-            block.shape = originalShape;
-            block.x = originalX;
-            return;
-        }
-    }
+// block.js の rotateBlock を呼び出すためのラッパー関数
+function rotateBlockWrapper(dir) {
+    if (!gameState.currentBlock || gameState.isGameOver) return;
+    rotateBlock(gameState.currentBlock, gameState.board, gameState.ceilingY, dir); // block.js の rotateBlock を使用
 }
 
 function moveBlockSide(dir) {
     if (!gameState.currentBlock || gameState.isGameOver) return;
     gameState.currentBlock.x += dir;
-    if (checkCollision()) {
+    // block.js の checkCollision を使用
+    if (checkCollision(gameState.currentBlock, gameState.board, gameState.ceilingY)) {
         gameState.currentBlock.x -= dir;
     }
 }
 
 function hardDrop() {
     if (!gameState.currentBlock || gameState.isGameOver) return;
-    while (!checkCollision()) {
+    // block.js の checkCollision を使用
+    while (!checkCollision(gameState.currentBlock, gameState.board, gameState.ceilingY)) {
         gameState.currentBlock.y++;
     }
-    gameState.currentBlock.y--;
+    gameState.currentBlock.y--; // 衝突したら一つ戻す
     placeBlock();
     spawnNewBlock();
-}
-
-function findSameColorNeighbors(coords, color) {
-    const neighbors = [];
-    const coordSet = new Set(coords.map(c => `${c.x},${c.y}`));
-    coords.forEach(c => {
-        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
-            const nx = c.x + dx;
-            const ny = c.y + dy;
-            if (coordSet.has(`${nx},${ny}`)) return;
-            if (isValid(nx, ny) && gameState.board[ny][nx] === color) {
-                neighbors.push({ x: nx, y: ny });
-            }
-        });
-    });
-    return neighbors;
-}
-
-function findCollateralDamage(coreSet) {
-    const finalSet = new Set(coreSet);
-    coreSet.forEach(coordStr => {
-        const [x, y] = coordStr.split(',').map(Number);
-        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
-            const nx = x + dx;
-            const ny = y + dy;
-            if (isValid(nx, ny) && gameState.board[ny][nx] !== 0) {
-                finalSet.add(`${nx},${ny}`);
-            }
-        });
-    });
-    return finalSet;
-}
-
-function isValid(x, y) {
-    return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT;
-}
-
-function dropFloatingBlocks() {
-    const visited = new Set();
-    const floatingGroups = [];
-    for (let y = 0; y < BOARD_HEIGHT; y++) {
-        for (let x = 0; x < BOARD_WIDTH; x++) {
-            if (gameState.board[y][x] !== 0 && !visited.has(`${x},${y}`)) {
-                const group = findConnectedGroup(x, y, visited);
-                let isSupported = false;
-                for (const cell of group) {
-                    if (cell.y === BOARD_HEIGHT - 1 || (isValid(cell.x, cell.y + 1) && gameState.board[cell.y + 1][cell.x] !== 0 && !group.some(g => g.x === cell.x && g.y === cell.y + 1))) {
-                        isSupported = true;
-                        break;
-                    }
-                }
-                if (!isSupported) floatingGroups.push(group);
-            }
-        }
-    }
-    if (floatingGroups.length > 0) {
-        floatingGroups.forEach(group => {
-            group.forEach(cell => { gameState.board[cell.y][cell.x] = 0; });
-        });
-        floatingGroups.forEach(group => {
-            let dropDistance = 0;
-            let canDrop = true;
-            while (canDrop) {
-                dropDistance++;
-                for (const cell of group) {
-                    const nextY = cell.y + dropDistance;
-                    if (nextY >= BOARD_HEIGHT || (isValid(nextY, cell.x) && gameState.board[nextY][cell.x] !== 0)) {
-                        canDrop = false;
-                        break;
-                    }
-                }
-            }
-            dropDistance--;
-            group.forEach(cell => { gameState.board[cell.y + dropDistance][cell.x] = cell.color; });
-        });
-    }
-}
-
-function findConnectedGroup(startX, startY, visited) {
-    const group = [];
-    const queue = [{ x: startX, y: startY }];
-    visited.add(`${startX},${startY}`);
-    while (queue.length > 0) {
-        const current = queue.shift();
-        current.color = gameState.board[current.y][current.x];
-        group.push(current);
-        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
-            const neighbor = { x: current.x + dx, y: current.y + dy };
-            const neighborStr = `${neighbor.x},${neighbor.y}`;
-            if (isValid(neighbor.x, neighbor.y) && gameState.board[neighbor.y][neighbor.x] !== 0 && !visited.has(neighborStr)) {
-                visited.add(neighborStr);
-                queue.push(neighbor);
-            }
-        });
-    }
-    return group;
 }
 
 function handleKeydown(event) {
@@ -402,6 +236,6 @@ function handleKeydown(event) {
     else if (event.key === 'ArrowRight') moveBlockSide(1);
     else if (event.key === 'ArrowDown') moveBlockDown();
     else if (event.key === 'ArrowUp') hardDrop();
-    else if (event.key === 'z' || event.key === 'Z') rotateBlock(-1);
-    else if (event.key === 'x' || event.key === 'X') rotateBlock(1);
+    else if (event.key === 'z' || event.key === 'Z') rotateBlockWrapper(-1);
+    else if (event.key === 'x' || event.key === 'X') rotateBlockWrapper(1);
 }
