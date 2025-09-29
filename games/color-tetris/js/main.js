@@ -40,7 +40,8 @@ function startGame(mode) {
         board: Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0)),
         currentBlock: null, score: 0, startTime: 0, lastTime: 0,
         dropCounter: 0, dropInterval: 700, ceilingY: 0,
-        gameMode: mode, animationFrameId: null
+        gameMode: mode, animationFrameId: null,
+        isGameOver: false // ゲームオーバーフラグ
     };
     
     ui.canvas.width = BOARD_WIDTH * CELL_SIZE;
@@ -52,6 +53,9 @@ function startGame(mode) {
 }
 
 async function gameOver() {
+    if (gameState.isGameOver) return;
+    gameState.isGameOver = true;
+    
     cancelAnimationFrame(gameState.animationFrameId);
     gameState.animationFrameId = null;
 
@@ -74,6 +78,8 @@ async function gameOver() {
 }
 
 function gameLoop(time = 0) {
+    if (gameState.isGameOver) return;
+
     if (!gameState.startTime) gameState.startTime = time;
     const deltaTime = time - gameState.lastTime;
     gameState.lastTime = time;
@@ -125,6 +131,7 @@ function checkDifficultyUpdate(elapsedTime) {
 }
 
 function spawnNewBlock() {
+    if (gameState.isGameOver) return;
     const colors = colorPalettes[gameState.gameMode];
     const shapeData = blockShapes[Math.floor(Math.random() * blockShapes.length)];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -139,7 +146,7 @@ function spawnNewBlock() {
 }
 
 function moveBlockDown() {
-    if (!gameState.currentBlock) return;
+    if (!gameState.currentBlock || gameState.isGameOver) return;
     gameState.currentBlock.y++;
     if (checkCollision()) {
         gameState.currentBlock.y--;
@@ -150,6 +157,7 @@ function moveBlockDown() {
 }
 
 function placeBlock() {
+    if (gameState.isGameOver) return;
     const block = gameState.currentBlock;
     block.shape.forEach((row, y) => {
         row.forEach((value, x) => {
@@ -178,7 +186,7 @@ function placeBlock() {
             if (gameState.board[y][x] === block.color) sameColorCleared++;
             else if (gameState.board[y][x] !== 0) differentColorCleared++;
         });
-        gameState.score += (sameColorCleared * 3) + (differentColorCleared * 1);
+        gameState.score += (sameColorCleared * 100) + (differentColorCleared * 1);
         finalClearSet.forEach(coordStr => {
             const [x, y] = coordStr.split(',').map(Number);
             gameState.board[y][x] = 0;
@@ -207,7 +215,7 @@ function checkCollision() {
 
 function rotateBlock(dir) {
     const block = gameState.currentBlock;
-    if (!block) return;
+    if (!block || gameState.isGameOver) return;
     const originalShape = JSON.parse(JSON.stringify(block.shape));
     const originalX = block.x;
     const newShape = block.shape[0].map((_, colIndex) => block.shape.map(row => row[colIndex]));
@@ -228,7 +236,7 @@ function rotateBlock(dir) {
 }
 
 function moveBlockSide(dir) {
-    if (!gameState.currentBlock) return;
+    if (!gameState.currentBlock || gameState.isGameOver) return;
     gameState.currentBlock.x += dir;
     if (checkCollision()) {
         gameState.currentBlock.x -= dir;
@@ -236,7 +244,7 @@ function moveBlockSide(dir) {
 }
 
 function hardDrop() {
-    if (!gameState.currentBlock) return;
+    if (!gameState.currentBlock || gameState.isGameOver) return;
     while (!checkCollision()) {
         gameState.currentBlock.y++;
     }
@@ -342,7 +350,7 @@ function findConnectedGroup(startX, startY, visited) {
 }
 
 function handleKeydown(event) {
-    if (ui.gameScreenWrapper.classList.contains('hidden')) return;
+    if (ui.gameScreenWrapper.classList.contains('hidden') || gameState.isGameOver) return;
     if (event.key === 'ArrowLeft') moveBlockSide(-1);
     else if (event.key === 'ArrowRight') moveBlockSide(1);
     else if (event.key === 'ArrowDown') moveBlockDown();
