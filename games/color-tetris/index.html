@@ -16,10 +16,12 @@
     <div id="title-screen">
         <div class="title-content">
             <h1>Color Tetris</h1>
-            
-            <!-- ★★★ この <p> タグを削除 ★★★ -->
-            <!-- <p>色の見え方によって難易度が変わるパズルゲームです。</p> -->
 
+            <div id="season-info">
+                <h2 id="season-name-display"></h2>
+                <p id="season-period-display"></p>
+            </div>
+            
             <div class="mode-selection">
                 <button id="normal-mode-btn">
                     <h3>ノーマルモード</h3>
@@ -31,20 +33,20 @@
                 </button>
             </div>
             
-            <div class="season-selector">
-                <label for="season-select">シーズン:</label>
-                <select id="season-select">
-                    <!-- JavaScriptでオプションが追加されます -->
-                </select>
-                <button id="rule-button">？ ルール確認</button>
-            </div>
-            
-            <div class="ranking-wrapper">
-                <div id="ranking-container-alltime" class="ranking-container">
-                    <!-- JSで描画 -->
-                </div>
-                <div id="ranking-container-weekly" class="ranking-container">
-                    <!-- JSで描画 -->
+            <div id="ranking-section">
+                <button id="toggle-ranking-btn">ランキングを見る</button>
+                
+                <div id="ranking-controls" class="hidden">
+                    <div class="season-selector">
+                        <label for="season-select">シーズン:</label>
+                        <select id="season-select"></select>
+                        <button id="rule-button">？ ルール確認</button>
+                    </div>
+                    
+                    <div class="ranking-wrapper">
+                        <div id="ranking-container-alltime" class="ranking-container"></div>
+                        <div id="ranking-container-weekly" class="ranking-container"></div>
+                    </div>
                 </div>
             </div>
 
