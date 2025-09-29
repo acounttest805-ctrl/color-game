@@ -186,7 +186,7 @@ function placeBlock() {
             if (gameState.board[y][x] === block.color) sameColorCleared++;
             else if (gameState.board[y][x] !== 0) differentColorCleared++;
         });
-        gameState.score += (sameColorCleared * 100) + (differentColorCleared * 1);
+        gameState.score += (sameColorCleared * 3) + (differentColorCleared * 1);
         finalClearSet.forEach(coordStr => {
             const [x, y] = coordStr.split(',').map(Number);
             gameState.board[y][x] = 0;
