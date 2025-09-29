@@ -1,5 +1,4 @@
-// block.js
-// ★★★ この行に CELL_SIZE を追加 ★★★
+// color-tetris/js/block.js
 import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, blockShapes, colorPalettes } from './constants.js';
 
 export function createNewBlock(ceilingY, mode) {
@@ -23,7 +22,6 @@ export function drawBlock(ctx, block) {
     block.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                // ここで CELL_SIZE が使われている
                 ctx.fillRect(
                     (block.x + x) * CELL_SIZE,
                     (block.y + y) * CELL_SIZE,
@@ -40,30 +38,44 @@ export function checkCollision(block, board, ceilingY) {
             if (block.shape[y][x] !== 0) {
                 let newX = block.x + x;
                 let newY = block.y + y;
+                // BOARD_HEIGHT >= newY の条件は、ブロックがボード外に出る（上にはみ出る）ことを防ぐ
+                // newY >= ceilingY は、ゲームオーバーラインを考慮
                 if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT || newY < ceilingY) return true;
                 if (board[newY] && board[newY][newX] !== 0) return true;
             }
-        }
+        });
     }
     return false;
 }
 
 export function rotateBlock(block, board, ceilingY, dir) {
-    const originalShape = block.shape;
+    // 回転前のブロックの状態を保存
+    const originalShape = JSON.parse(JSON.stringify(block.shape)); // ディープコピー
     const originalX = block.x;
+    const originalY = block.y;
+
+    // ブロックの回転ロジック（転置 + 行または列の反転）
     const newShape = block.shape[0].map((_, colIndex) => block.shape.map(row => row[colIndex]));
-    if (dir > 0) newShape.forEach(row => row.reverse());
-    else newShape.reverse();
+    if (dir > 0) { // 時計回り
+        newShape.forEach(row => row.reverse());
+    } else { // 反時計回り
+        newShape.reverse();
+    }
     block.shape = newShape;
 
+    // 壁蹴り（Wall Kick）処理
     let offset = 1;
     while (checkCollision(block, board, ceilingY)) {
-        currentBlock.x += offset; // グローバル変数を参照している可能性を考慮して修正
-        offset = -(offset + (offset > 0 ? 1 : -1));
-        if (offset > block.shape[0].length + 2) { // 補正範囲を少し広げる
+        block.x += offset; // ★修正: block.x を使用
+        offset = -(offset + (offset > 0 ? 1 : -1)); // 左右に交互に動く
+        // 補正の試行回数に上限を設ける
+        if (Math.abs(offset) > block.shape[0].length + 2) { 
+            // 補正範囲を超えたら元の状態に戻す
             block.shape = originalShape;
             block.x = originalX;
-            return;
+            block.y = originalY; // ★修正: Y座標も元に戻す
+            return; // 回転失敗
         }
     }
+    // 回転成功（衝突がなければそのまま、衝突があれば補正された位置）
 }
