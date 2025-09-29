@@ -16,7 +16,10 @@
     <div id="title-screen">
         <div class="title-content">
             <h1>Color Tetris</h1>
-            <p>色の見え方によって難易度が変わるパズルゲームです。</p>
+            
+            <!-- ★★★ この <p> タグを削除 ★★★ -->
+            <!-- <p>色の見え方によって難易度が変わるパズルゲームです。</p> -->
+
             <div class="mode-selection">
                 <button id="normal-mode-btn">
                     <h3>ノーマルモード</h3>
@@ -28,15 +31,20 @@
                 </button>
             </div>
             
-            <!-- ★★★ ランキング表示エリアを2つに分割 ★★★ -->
+            <div class="season-selector">
+                <label for="season-select">シーズン:</label>
+                <select id="season-select">
+                    <!-- JavaScriptでオプションが追加されます -->
+                </select>
+                <button id="rule-button">？ ルール確認</button>
+            </div>
+            
             <div class="ranking-wrapper">
                 <div id="ranking-container-alltime" class="ranking-container">
-                    <h2>全期間ランキング</h2>
-                    <ol id="ranking-list-alltime"><li>Loading...</li></ol>
+                    <!-- JSで描画 -->
                 </div>
                 <div id="ranking-container-weekly" class="ranking-container">
-                    <h2>今週のランキング</h2>
-                    <ol id="ranking-list-weekly"><li>Loading...</li></ol>
+                    <!-- JSで描画 -->
                 </div>
             </div>
 
@@ -70,7 +78,6 @@
       import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
       import { initGame } from "./js/main.js";
 
-      // ★★★ あなたのFirebaseプロジェクト設定情報をここに貼り付け ★★★
       const firebaseConfig = {
   apiKey: "AIzaSyDyxFiYVC7ueBmec6wph_AV4FdgNdRAkb0",
   authDomain: "color-game-5041b.firebaseapp.com",
