@@ -29,21 +29,22 @@ export const ui = {
         this.scoreDisplay.textContent = score;
     },
 
-    displayRankings({ allTime, weekly }) {
-        this.updateRankingList(document.getElementById('ranking-list-alltime'), allTime);
-        this.updateRankingList(document.getElementById('ranking-list-weekly'), weekly);
+    displayRankings({ allTime, weekly }, seasonName) {
+        this.updateRankingList(this.rankingContainerAllTime, `${seasonName} 全期間`, allTime);
+        this.updateRankingList(this.rankingContainerWeekly, `${seasonName} 今週`, weekly);
     },
 
-    updateRankingList(listElement, data) {
-        listElement.innerHTML = ''; // リストをクリア
+    updateRankingList(container, title, data) {
+        let html = `<h2>${title}</h2><ol>`;
         if (data.length === 0) {
-            listElement.innerHTML = '<li>まだランキングがありません。</li>';
+            html += '<li>まだランキングがありません。</li>';
         } else {
             data.forEach((item, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="rank">${index + 1}.</span> <span class="name">${item.name}</span> <span class="mode">[${item.mode}]</span> <span class="score">${item.score}</span>`;
-                listElement.appendChild(li);
+                const name = item.name ? item.name.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "Anonymous";
+                html += `<li><span class="rank">${index + 1}.</span> <span class="name">${name}</span> <span class="mode">[${item.mode}]</span> <span class="score">${item.score}</span></li>`;
             });
         }
+        html += '</ol>';
+        container.innerHTML = html;
     }
 };

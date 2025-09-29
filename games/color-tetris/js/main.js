@@ -1,15 +1,37 @@
 // js/main.js
-import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, colorPalettes, blockShapes } from './constants.js';
+import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, colorPalettes, blockShapes, CURRENT_SEASON, SEASONS } from './constants.js';
 import { ui } from './ui.js';
 import { initFirebase, submitScore, getRankings } from './firebase.js';
 
 const ctx = ui.canvas.getContext('2d');
 
 let gameState = {};
+let selectedSeason = CURRENT_SEASON;
 
-// --- メインの初期化関数 ---
 export function initGame(db) {
     initFirebase(db);
+
+    const seasonSelect = document.getElementById('season-select');
+    // プルダウンの重複作成を防ぐ
+    if (seasonSelect.options.length === 0) {
+        for (const seasonNum in SEASONS) {
+            const option = document.createElement('option');
+            option.value = seasonNum;
+            option.textContent = SEASONS[seasonNum].name;
+            seasonSelect.appendChild(option);
+        }
+    }
+    seasonSelect.value = selectedSeason;
+    
+    seasonSelect.addEventListener('change', (e) => {
+        selectedSeason = parseInt(e.target.value, 10);
+        showTitleScreen();
+    });
+
+    document.getElementById('rule-button').addEventListener('click', () => {
+        alert(`${SEASONS[selectedSeason].name}\n\n${SEASONS[selectedSeason].description}`);
+    });
+
     ui.normalModeBtn.addEventListener('click', () => startGame('normal'));
     ui.supportModeBtn.addEventListener('click', () => startGame('support'));
     ui.backToTitleBtn.addEventListener('click', showTitleScreen);
@@ -31,8 +53,8 @@ async function showTitleScreen() {
         cancelAnimationFrame(gameState.animationFrameId);
         gameState.animationFrameId = null;
     }
-    const rankings = await getRankings();
-    ui.displayRankings(rankings);
+    const rankings = await getRankings(selectedSeason);
+    ui.displayRankings(rankings, SEASONS[selectedSeason].name);
 }
 
 function startGame(mode) {
@@ -41,7 +63,7 @@ function startGame(mode) {
         currentBlock: null, score: 0, startTime: 0, lastTime: 0,
         dropCounter: 0, dropInterval: 700, ceilingY: 0,
         gameMode: mode, animationFrameId: null,
-        isGameOver: false // ゲームオーバーフラグ
+        season: CURRENT_SEASON // ★現在のシーズンでゲーム開始
     };
     
     ui.canvas.width = BOARD_WIDTH * CELL_SIZE;
@@ -55,11 +77,11 @@ function startGame(mode) {
 async function gameOver() {
     if (gameState.isGameOver) return;
     gameState.isGameOver = true;
-    
     cancelAnimationFrame(gameState.animationFrameId);
     gameState.animationFrameId = null;
 
-    const rankings = await getRankings();
+    // 現在のシーズンのランキングと比較
+    const rankings = await getRankings(gameState.season);
     const lowestAllTime = rankings.allTime.length < 5 ? 0 : rankings.allTime[rankings.allTime.length - 1].score;
     const lowestWeekly = rankings.weekly.length < 5 ? 0 : rankings.weekly[rankings.weekly.length - 1].score;
 
@@ -69,7 +91,7 @@ async function gameOver() {
             "Player"
         );
         if (playerName !== null) {
-            await submitScore(playerName, gameState.score, gameState.gameMode);
+            await submitScore(playerName, gameState.score, gameState.gameMode, gameState.season);
         }
     } else {
         alert(`ゲームオーバー！\nスコア: ${gameState.score}`);
@@ -79,7 +101,6 @@ async function gameOver() {
 
 function gameLoop(time = 0) {
     if (gameState.isGameOver) return;
-
     if (!gameState.startTime) gameState.startTime = time;
     const deltaTime = time - gameState.lastTime;
     gameState.lastTime = time;
@@ -222,7 +243,6 @@ function rotateBlock(dir) {
     if (dir > 0) newShape.forEach(row => row.reverse());
     else newShape.reverse();
     block.shape = newShape;
-
     let offset = 1;
     while (checkCollision()) {
         block.x += offset;
