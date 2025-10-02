@@ -97,8 +97,10 @@ async function showTitleScreen() {
 function startGame(mode) {
     gameState = {
         board: Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0)),
-        currentBlock: null, score: 0, startTime: 0, lastTime: 0,
-        dropCounter: 0, dropInterval: 700, ceilingY: 0,
+        currentBlock: null, nextBlock: null, score: 0, startTime: 0, lastTime: 0,
+        dropCounter: 0,
+        dropInterval: String(CURRENT_SEASON) === "1" ? 680 : 700,
+        ceilingY: 0,
         gameMode: mode, animationFrameId: null,
         season: CURRENT_SEASON,
         isGameOver: false
@@ -108,7 +110,10 @@ function startGame(mode) {
     ui.canvas.height = BOARD_HEIGHT * CELL_SIZE;
     
     ui.showGameScreen();
-    spawnNewBlock();
+    
+    gameState.nextBlock = createNewBlock(); // 最初のNextブロックを準備
+    spawnNewBlock(); // 最初のCurrentブロックを登場させる
+    
     gameLoop();
 }
 
@@ -185,24 +190,45 @@ function draw() {
 
 function checkDifficultyUpdate(elapsedTime) {
     const minutes = Math.floor(elapsedTime / 60000);
-    gameState.ceilingY = Math.min(minutes, 9);
-    const speedUps = Math.floor(elapsedTime / 300000);
-    gameState.dropInterval = 700 / Math.pow(2, speedUps);
+
+    if (String(gameState.season) === "1") {
+        gameState.ceilingY = Math.min(minutes, 15);
+        const intervals = Math.min(minutes, 15);
+        gameState.dropInterval = Math.max(80, 680 - (intervals * 20));
+    } else { // シーズン0
+        gameState.ceilingY = Math.min(minutes, 9);
+        const speedUps = Math.floor(elapsedTime / 300000);
+        gameState.dropInterval = 700 / Math.pow(2, speedUps);
+    }
 }
 
 function spawnNewBlock() {
     if (gameState.isGameOver) return;
-    const colors = colorPalettes[gameState.gameMode];
-    const shapeData = blockShapes[Math.floor(Math.random() * blockShapes.length)];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    gameState.currentBlock = {
-        shape: shapeData.shape, color: randomColor,
-        x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
-        y: gameState.ceilingY
-    };
+
+    gameState.currentBlock = gameState.nextBlock;
+    gameState.nextBlock = createNewBlock();
+    
+    if (gameState.currentBlock) {
+        gameState.currentBlock.x = Math.floor(BOARD_WIDTH / 2) - Math.floor(gameState.currentBlock.shape[0].length / 2);
+        gameState.currentBlock.y = gameState.ceilingY; // 出現位置を天井に設定
+    }
+    
+    ui.drawNextBlock(gameState.nextBlock);
+
     if (checkCollision()) {
         gameOver();
     }
+}
+
+function createNewBlock() {
+    const colors = colorPalettes[gameState.gameMode][`s${gameState.season}`];
+    const shapeData = blockShapes[Math.floor(Math.random() * blockShapes.length)];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    return {
+        shape: shapeData.shape, color: randomColor,
+        x: 0, y: 0 // x, yはspawnNewBlockで設定
+    };
 }
 
 function moveBlockDown() {
@@ -234,24 +260,43 @@ function placeBlock() {
             }
         });
     });
-    const sameColorNeighbors = findSameColorNeighbors(placedCoords, block.color);
-    if (sameColorNeighbors.length > 0) {
-        const coreClearSet = new Set();
-        placedCoords.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
-        sameColorNeighbors.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
-        const finalClearSet = findCollateralDamage(coreClearSet);
-        let sameColorCleared = 0, differentColorCleared = 0;
-        finalClearSet.forEach(coordStr => {
-            const [x, y] = coordStr.split(',').map(Number);
-            if (gameState.board[y][x] === block.color) sameColorCleared++;
-            else if (gameState.board[y][x] !== 0) differentColorCleared++;
-        });
-        gameState.score += (sameColorCleared * 3) + (differentColorCleared * 1);
-        finalClearSet.forEach(coordStr => {
-            const [x, y] = coordStr.split(',').map(Number);
-            gameState.board[y][x] = 0;
-        });
-        dropFloatingBlocks();
+    
+    // シーズンごとのルールを適用
+    if (String(gameState.season) === "0" || String(gameState.season) === "1") {
+        const sameColorNeighbors = findSameColorNeighbors(placedCoords, block.color);
+        if (sameColorNeighbors.length > 0) {
+            const coreClearSet = new Set();
+            placedCoords.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
+            sameColorNeighbors.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
+            const finalClearSet = findCollateralDamage(coreClearSet);
+            let sameColorCleared = 0, differentColorCleared = 0;
+            finalClearSet.forEach(coordStr => {
+                const [x, y] = coordStr.split(',').map(Number);
+                if (gameState.board[y][x] === block.color) sameColorCleared++;
+                else if (gameState.board[y][x] !== 0) differentColorCleared++;
+            });
+
+            if (String(gameState.season) === "1") {
+                gameState.score += (sameColorCleared * 4) + (differentColorCleared * 2);
+            } else {
+                gameState.score += (sameColorCleared * 3) + (differentColorCleared * 1);
+            }
+
+            finalClearSet.forEach(coordStr => {
+                const [x, y] = coordStr.split(',').map(Number);
+                gameState.board[y][x] = 0;
+            });
+            dropFloatingBlocks();
+
+            const isAllClear = gameState.board.every(row => row.every(cell => cell === 0));
+            if (isAllClear) {
+                // ★★★ シーズン1の場合のみボーナスを加算 ★★★
+                if (String(gameState.season) === "1") {
+                    ui.showAllClearEffect();
+                    gameState.score += 300;
+                }
+            }
+        }
     }
 }
 
