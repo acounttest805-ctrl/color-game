@@ -51,17 +51,23 @@ function showTitleScreen() {
 }
 
 function startGame(season, mode) {
+    // シーズン0の定数を適用
+    const S0_BOARD_HEIGHT = 18;
+    const S0_CELL_SIZE = 30;
+
     gameState = {
-        board: Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0)),
+        board: Array.from({ length: S0_BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0)),
         currentBlock: null, score: 0, startTime: 0, lastTime: 0,
         dropCounter: 0, dropInterval: 700,
-        ceilingY: 0, // ★難易度管理用の変数を追加
+        ceilingY: 0,
         gameMode: mode, animationFrameId: null,
-        season: season, isGameOver: false
+        season: season, isGameOver: false,
+        boardHeight: S0_BOARD_HEIGHT, // ゲームステートに保存
+        cellSize: S0_CELL_SIZE,       // ゲームステートに保存
     };
 
-    canvas.width = BOARD_WIDTH * CELL_SIZE;
-    canvas.height = BOARD_HEIGHT * CELL_SIZE;
+    canvas.width = BOARD_WIDTH * gameState.cellSize;
+    canvas.height = gameState.boardHeight * gameState.cellSize;
     
     titleScreen.classList.add('hidden');
     gameScreenWrapper.classList.remove('hidden');
@@ -87,9 +93,9 @@ function gameLoop(time = 0) {
     gameState.lastTime = time;
 
     updateUI(time - gameState.startTime);
-    // ★シーズン0の時だけ難易度上昇チェックを行う
+    
     if (String(gameState.season) === "0") {
-        checkDifficultyUpdate(time - gameState.startTime);
+        checkDifficultyUpdate_S0(time - gameState.startTime);
     }
     
     gameState.dropCounter += deltaTime;
@@ -101,8 +107,7 @@ function gameLoop(time = 0) {
     gameState.animationFrameId = requestAnimationFrame(gameLoop);
 }
 
-// ★難易度上昇関数を移植
-function checkDifficultyUpdate(elapsedTime) {
+function checkDifficultyUpdate_S0(elapsedTime) {
     const minutes = Math.floor(elapsedTime / 60000);
     gameState.ceilingY = Math.min(minutes, 9);
     const speedUps = Math.floor(elapsedTime / 300000); // 5分ごと
@@ -120,17 +125,16 @@ function updateUI(elapsedTime) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // ★天井の描画処理を移植
     if (String(gameState.season) === "0" && gameState.ceilingY > 0) {
-        ctx.fillStyle = 'rgba(51, 51, 51, 0.7)'; // 半透明のグレー
-        ctx.fillRect(0, 0, canvas.width, gameState.ceilingY * CELL_SIZE);
+        ctx.fillStyle = 'rgba(51, 51, 51, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, gameState.ceilingY * gameState.cellSize);
     }
 
     gameState.board.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
                 ctx.fillStyle = value;
-                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+                ctx.fillRect(x * gameState.cellSize, y * gameState.cellSize, gameState.cellSize - 1, gameState.cellSize - 1);
             }
         });
     });
@@ -140,7 +144,7 @@ function draw() {
         gameState.currentBlock.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value !== 0) {
-                    ctx.fillRect((gameState.currentBlock.x + x) * CELL_SIZE, (gameState.currentBlock.y + y) * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+                    ctx.fillRect((gameState.currentBlock.x + x) * gameState.cellSize, (gameState.currentBlock.y + y) * gameState.cellSize, gameState.cellSize - 1, gameState.cellSize - 1);
                 }
             });
         });
@@ -156,7 +160,7 @@ function spawnNewBlock() {
     gameState.currentBlock = {
         shape: shapeData.shape, color: randomColor,
         x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
-        y: String(gameState.season) === "0" ? gameState.ceilingY : 0 // ★天井から出現
+        y: String(gameState.season) === "0" ? gameState.ceilingY : 0
     };
 
     if (checkCollision()) {
@@ -165,19 +169,14 @@ function spawnNewBlock() {
 }
 
 function checkCollision() {
-    const block = gameState.currentBlock;
-    const board = gameState.board;
-    // ★天井の高さを取得 (シーズン0以外は0)
-    const ceilingY = String(gameState.season) === "0" ? gameState.ceilingY : 0;
-
+    const { currentBlock: block, board, ceilingY, boardWidth, boardHeight } = gameState;
     if (!block) return true;
     for (let y = 0; y < block.shape.length; y++) {
         for (let x = 0; x < block.shape[y].length; x++) {
             if (block.shape[y][x] !== 0) {
                 let newX = block.x + x;
                 let newY = block.y + y;
-                // ★天井との衝突判定を追加
-                if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT || newY < ceilingY) {
+                if (newX < 0 || newX >= BOARD_WIDTH || newY >= boardHeight || newY < ceilingY) {
                     return true;
                 }
                 if (board[newY] && board[newY][newX] !== 0) return true;
@@ -313,19 +312,19 @@ function findCollateralDamage(coreSet) {
 }
 
 function isValid(x, y) {
-    return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT;
+    return x >= 0 && x < gameState.boardWidth && y >= 0 && y < gameState.boardHeight;
 }
 
 function dropFloatingBlocks() {
     const visited = new Set();
     const floatingGroups = [];
-    for (let y = 0; y < BOARD_HEIGHT; y++) {
-        for (let x = 0; x < BOARD_WIDTH; x++) {
+    for (let y = 0; y < gameState.boardHeight; y++) {
+        for (let x = 0; x < gameState.boardWidth; x++) {
             if (gameState.board[y][x] !== 0 && !visited.has(`${x},${y}`)) {
                 const group = findConnectedGroup(x, y, visited);
                 let isSupported = false;
                 for (const cell of group) {
-                    if (cell.y === BOARD_HEIGHT - 1 || (isValid(cell.x, cell.y + 1) && gameState.board[cell.y + 1][cell.x] !== 0 && !group.some(g => g.x === cell.x && g.y === cell.y + 1))) {
+                    if (cell.y === gameState.boardHeight - 1 || (isValid(cell.x, cell.y + 1) && gameState.board[cell.y + 1][cell.x] !== 0 && !group.some(g => g.x === cell.x && g.y === cell.y + 1))) {
                         isSupported = true;
                         break;
                     }
@@ -345,7 +344,7 @@ function dropFloatingBlocks() {
                 dropDistance++;
                 for (const cell of group) {
                     const nextY = cell.y + dropDistance;
-                    if (nextY >= BOARD_HEIGHT || (isValid(nextY, cell.x) && gameState.board[nextY][cell.x] !== 0)) {
+                    if (nextY >= gameState.boardHeight || (isValid(nextY, cell.x) && gameState.board[nextY][cell.x] !== 0)) {
                         canDrop = false;
                         break;
                     }
