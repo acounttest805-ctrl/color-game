@@ -3,7 +3,6 @@ import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, CURRENT_SEASON, SEASONS } from '.
 import { ui } from './ui.js';
 import { initFirebase, submitScore, getRankings } from './firebase.js';
 import { getGuestUserId } from './crypto.js';
-// ★修正: board.js から rotateBlock の import を削除
 import { createEmptyBoard, drawBoard, placeBlockOnBoard } from './board.js';
 import { createNewBlock, drawBlock as drawCurrentBlock, checkCollision as checkBlockCollision, rotateBlock as rotateCurrentBlock } from './block.js';
 
@@ -118,7 +117,6 @@ async function gameOver() {
         );
         if (playerName !== null) {
             const encodedId = getGuestUserId();
-            // ★修正: playerName.slice(0, 8) を追加
             await submitScore(encodedId, playerName.slice(0, 8), gameState.score, gameState.gameMode, gameState.season);
         }
     } else {
@@ -150,15 +148,18 @@ function draw() {
     ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
     
     drawBoard(ctx, gameState.board, gameState.ceilingY);
-    drawCurrentBlock(ctx, gameState.currentBlock); // 別名にした関数を使用
+    drawCurrentBlock(ctx, gameState.currentBlock);
 }
 
+// ★★★ ここを修正 ★★★
 function checkDifficultyUpdate(elapsedTime) {
     const minutes = Math.floor(elapsedTime / 60000);
     gameState.ceilingY = Math.min(minutes, 9);
-    // ★修正: 速度上昇ロジックを変更
-    const speedUps = Math.floor(elapsedTime / 30000); // 30秒ごとに速度アップ
-    gameState.dropInterval = Math.max(100, 700 - (speedUps * 50));
+    
+    // 5分 (300000ms) ごとに速度を2倍にする
+    const speedUps = Math.floor(elapsedTime / 300000); 
+    const baseInterval = 700;
+    gameState.dropInterval = baseInterval / Math.pow(2, speedUps);
 }
 
 function spawnNewBlock() {
@@ -183,7 +184,6 @@ function placeBlock() {
     if (gameState.isGameOver) return;
     const scoreToAdd = placeBlockOnBoard(gameState.board, gameState.currentBlock);
     gameState.score += scoreToAdd;
-    // ★修正: spawnNewBlockをここに追加
     spawnNewBlock();
 }
 
