@@ -1,4 +1,4 @@
-const CACHE_NAME = 'color-game-cache-v5.1'; // 更新する際はここのバージョンを上げる
+const CACHE_NAME = 'color-game-cache-v6'; // 更新する際はここのバージョンを上げる
 const urlsToCache = [
   '/',
   '/index.html',
@@ -63,3 +63,4 @@ self.addEventListener('message', event => {
   }
 
 });
+
