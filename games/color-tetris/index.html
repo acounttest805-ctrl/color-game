@@ -16,12 +16,10 @@
     <div id="title-screen">
         <div class="title-content">
             <h1>Color Tetris</h1>
-
             <div id="season-info">
                 <h2 id="season-name-display"></h2>
                 <p id="season-period-display"></p>
             </div>
-            
             <div class="mode-selection">
                 <button id="normal-mode-btn">
                     <h3>ノーマルモード</h3>
@@ -32,26 +30,21 @@
                     <p>誰にでも識別しやすい、はっきりとした色の配色でプレイします。</p>
                 </button>
             </div>
-
             <button id="how-to-play-btn">遊び方</button>
-            
             <div id="ranking-section">
                 <button id="toggle-ranking-btn">ランキングを見る</button>
-                
                 <div id="ranking-controls" class="hidden">
                     <div class="season-selector">
                         <select id="season-select"></select>
                         <p>の</p>
                         <button id="rule-button">ルール</button>
                     </div>
-                    
                     <div class="ranking-wrapper">
                         <div id="ranking-container-alltime" class="ranking-container"></div>
                         <div id="ranking-container-weekly" class="ranking-container"></div>
                     </div>
                 </div>
             </div>
-
             <a href="../../index.html" class="home-button">ホームに戻る</a>
         </div>
     </div>
@@ -79,13 +72,15 @@
         <div id="info-bar">
             <span id="time-container">Time: <span id="time-display">0:00</span></span>
             <span id="score-container">Score: <span id="score-display">0</span></span>
+            <div id="next-block-container">
+                <span>NEXT</span>
+                <canvas id="next-block-canvas" width="60" height="60"></canvas>
+            </div>
             <button id="back-to-title-btn">タイトルへ</button>
         </div>
-        
         <div id="game-container">
             <canvas id="game-board"></canvas>
         </div>
-
         <div id="controls">
             <button id="btn-left">◀</button>
             <button id="btn-down">▼</button>

@@ -5,13 +5,15 @@ body {
     color: white;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start; /* ★ center から flex-start に変更 */
+    padding-top: 2vh; /* ★ 上部に少し余白を追加 */
     align-items: center;
     min-height: 100vh;
     overflow: auto;
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box; /* ★ 追加 */
 }
 
 .hidden {
@@ -252,24 +254,53 @@ body {
     align-items: center;
 }
 #game-container {
+    position: relative;
     border: 2px solid #fff;
 }
 #info-bar {
-    width: 390px;
+    width: 325px;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: auto 1fr auto auto;
     align-items: center;
+    gap: 10px;
     margin-bottom: 10px;
     font-weight: bold;
 }
-#time-container { font-size: 1.2em; text-align: left; }
-#score-container { font-size: 1.6em; text-align: center; }
+#time-container { font-size: 1.1em; text-align: left; }
+#score-container { font-size: 1.4em; text-align: center; }
+#next-block-container {
+    text-align: center;
+    font-size: 0.8em;
+}
+#next-block-canvas {
+    background-color: #222;
+    border-radius: 5px;
+}
 #back-to-title-btn {
     font-size: 0.9em; background: none; border: 1px solid #888;
     color: #ccc; padding: 5px 10px; border-radius: 5px;
     cursor: pointer; justify-self: end; transition: background-color 0.2s, color 0.2s;
 }
 #back-to-title-btn:hover { background-color: #555; color: white; }
+
+#all-clear-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3.5em;
+    font-weight: bold;
+    color: yellow;
+    text-shadow: 0 0 10px red, 0 0 20px orange;
+    opacity: 0;
+    animation: all-clear-anim 1.5s ease-out;
+    pointer-events: none;
+}
+@keyframes all-clear-anim {
+    0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+}
+
 #controls {
     display: grid;
     grid-template-areas:
