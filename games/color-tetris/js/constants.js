@@ -13,8 +13,8 @@ export const SEASONS = {
     },
     1: {
         name: "シーズン1",
-        period: "開催期間未定",
-        description: "新しいルールは準備中です。お楽しみに！"
+        period: "2025/10/2～10/12",
+        description: "新しいルールは準備中です。"
     }
 };
 

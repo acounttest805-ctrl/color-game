@@ -1,10 +1,8 @@
 // js/main.js
-import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, CURRENT_SEASON, SEASONS } from './constants.js';
+import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, colorPalettes, blockShapes, CURRENT_SEASON, SEASONS } from './constants.js';
 import { ui } from './ui.js';
 import { initFirebase, submitScore, getRankings } from './firebase.js';
 import { getGuestUserId } from './crypto.js';
-import { createEmptyBoard, drawBoard, placeBlockOnBoard } from './board.js';
-import { createNewBlock, drawBlock as drawCurrentBlock, checkCollision as checkBlockCollision, rotateBlock as rotateCurrentBlock } from './block.js';
 
 const ctx = ui.canvas.getContext('2d');
 
@@ -12,6 +10,9 @@ const seasonNameDisplay = document.getElementById('season-name-display');
 const seasonPeriodDisplay = document.getElementById('season-period-display');
 const toggleRankingBtn = document.getElementById('toggle-ranking-btn');
 const rankingControls = document.getElementById('ranking-controls');
+const howToPlayBtn = document.getElementById('how-to-play-btn');
+const howToPlayModal = document.getElementById('how-to-play-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
 
 let gameState = {};
 let selectedSeason = CURRENT_SEASON;
@@ -40,6 +41,18 @@ export function initGame(db) {
 
     document.getElementById('rule-button').addEventListener('click', () => {
         alert(`${SEASONS[selectedSeason].name}\n\n${SEASONS[selectedSeason].description}`);
+    });
+
+    howToPlayBtn.addEventListener('click', () => {
+        howToPlayModal.classList.remove('hidden');
+    });
+    closeModalBtn.addEventListener('click', () => {
+        howToPlayModal.classList.add('hidden');
+    });
+    howToPlayModal.addEventListener('click', (event) => {
+        if (event.target === howToPlayModal) {
+            howToPlayModal.classList.add('hidden');
+        }
     });
 
     ui.normalModeBtn.addEventListener('click', () => startGame('normal'));
@@ -83,7 +96,7 @@ async function showTitleScreen() {
 
 function startGame(mode) {
     gameState = {
-        board: createEmptyBoard(),
+        board: Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0)),
         currentBlock: null, score: 0, startTime: 0, lastTime: 0,
         dropCounter: 0, dropInterval: 700, ceilingY: 0,
         gameMode: mode, animationFrameId: null,
@@ -117,7 +130,7 @@ async function gameOver() {
         );
         if (playerName !== null) {
             const encodedId = getGuestUserId();
-            await submitScore(encodedId, playerName.slice(0, 8), gameState.score, gameState.gameMode, gameState.season);
+            await submitScore(encodedId, playerName, gameState.score, gameState.gameMode, gameState.season);
         }
     } else {
         alert(`ゲームオーバー！\nスコア: ${gameState.score}`);
@@ -146,25 +159,47 @@ function gameLoop(time = 0) {
 function draw() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
-    
-    drawBoard(ctx, gameState.board, gameState.ceilingY);
-    drawCurrentBlock(ctx, gameState.currentBlock);
+    if (gameState.ceilingY > 0) {
+        ctx.fillStyle = '#333';
+        ctx.fillRect(0, 0, ui.canvas.width, gameState.ceilingY * CELL_SIZE);
+    }
+    gameState.board.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                ctx.fillStyle = value;
+                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+        });
+    });
+    if (gameState.currentBlock) {
+        ctx.fillStyle = gameState.currentBlock.color;
+        gameState.currentBlock.shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value !== 0) {
+                    ctx.fillRect((gameState.currentBlock.x + x) * CELL_SIZE, (gameState.currentBlock.y + y) * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+                }
+            });
+        });
+    }
 }
 
-// ★★★ ここを修正 ★★★
 function checkDifficultyUpdate(elapsedTime) {
     const minutes = Math.floor(elapsedTime / 60000);
     gameState.ceilingY = Math.min(minutes, 9);
-    
-    // 5分 (300000ms) ごとに速度を2倍にする
-    const speedUps = Math.floor(elapsedTime / 300000); 
-    const baseInterval = 700;
-    gameState.dropInterval = baseInterval / Math.pow(2, speedUps);
+    const speedUps = Math.floor(elapsedTime / 300000);
+    gameState.dropInterval = 700 / Math.pow(2, speedUps);
 }
 
 function spawnNewBlock() {
     if (gameState.isGameOver) return;
-    gameState.currentBlock = createNewBlock(gameState.ceilingY, gameState.gameMode);
+    const colors = colorPalettes[gameState.gameMode];
+    const shapeData = blockShapes[Math.floor(Math.random() * blockShapes.length)];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    gameState.currentBlock = {
+        shape: shapeData.shape, color: randomColor,
+        x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
+        y: gameState.ceilingY
+    };
     if (checkCollision()) {
         gameOver();
     }
@@ -176,25 +211,88 @@ function moveBlockDown() {
     if (checkCollision()) {
         gameState.currentBlock.y--;
         placeBlock();
+        spawnNewBlock();
     }
     gameState.dropCounter = 0;
 }
 
 function placeBlock() {
     if (gameState.isGameOver) return;
-    const scoreToAdd = placeBlockOnBoard(gameState.board, gameState.currentBlock);
-    gameState.score += scoreToAdd;
-    spawnNewBlock();
+    const block = gameState.currentBlock;
+    block.shape.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                gameState.board[block.y + y][block.x + x] = block.color;
+            }
+        });
+    });
+    const placedCoords = [];
+    block.shape.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                placedCoords.push({ x: block.x + x, y: block.y + y });
+            }
+        });
+    });
+    const sameColorNeighbors = findSameColorNeighbors(placedCoords, block.color);
+    if (sameColorNeighbors.length > 0) {
+        const coreClearSet = new Set();
+        placedCoords.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
+        sameColorNeighbors.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
+        const finalClearSet = findCollateralDamage(coreClearSet);
+        let sameColorCleared = 0, differentColorCleared = 0;
+        finalClearSet.forEach(coordStr => {
+            const [x, y] = coordStr.split(',').map(Number);
+            if (gameState.board[y][x] === block.color) sameColorCleared++;
+            else if (gameState.board[y][x] !== 0) differentColorCleared++;
+        });
+        gameState.score += (sameColorCleared * 3) + (differentColorCleared * 1);
+        finalClearSet.forEach(coordStr => {
+            const [x, y] = coordStr.split(',').map(Number);
+            gameState.board[y][x] = 0;
+        });
+        dropFloatingBlocks();
+    }
 }
 
 function checkCollision() {
-    if (!gameState.currentBlock) return true;
-    return checkBlockCollision(gameState.currentBlock, gameState.board, gameState.ceilingY);
+    const block = gameState.currentBlock;
+    const board = gameState.board;
+    const ceilingY = gameState.ceilingY;
+    if (!block) return true;
+    for (let y = 0; y < block.shape.length; y++) {
+        for (let x = 0; x < block.shape[y].length; x++) {
+            if (block.shape[y][x] !== 0) {
+                let newX = block.x + x;
+                let newY = block.y + y;
+                if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT || newY < ceilingY) return true;
+                if (board[newY] && board[newY][newX] !== 0) return true;
+            }
+        }
+    }
+    return false;
 }
 
 function rotateBlock(dir) {
-    if (!gameState.currentBlock || gameState.isGameOver) return;
-    rotateCurrentBlock(gameState.currentBlock, gameState.board, gameState.ceilingY, dir);
+    const block = gameState.currentBlock;
+    if (!block || gameState.isGameOver) return;
+    const originalShape = JSON.parse(JSON.stringify(block.shape));
+    const originalX = block.x;
+    const newShape = block.shape[0].map((_, colIndex) => block.shape.map(row => row[colIndex]));
+    if (dir > 0) newShape.forEach(row => row.reverse());
+    else newShape.reverse();
+    block.shape = newShape;
+
+    let offset = 1;
+    while (checkCollision()) {
+        block.x += offset;
+        offset = -(offset + (offset > 0 ? 1 : -1));
+        if (Math.abs(offset) > block.shape[0].length + 2) {
+            block.shape = originalShape;
+            block.x = originalX;
+            return;
+        }
+    }
 }
 
 function moveBlockSide(dir) {
@@ -212,6 +310,103 @@ function hardDrop() {
     }
     gameState.currentBlock.y--;
     placeBlock();
+    spawnNewBlock();
+}
+
+function findSameColorNeighbors(coords, color) {
+    const neighbors = [];
+    const coordSet = new Set(coords.map(c => `${c.x},${c.y}`));
+    coords.forEach(c => {
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+            const nx = c.x + dx;
+            const ny = c.y + dy;
+            if (coordSet.has(`${nx},${ny}`)) return;
+            if (isValid(nx, ny) && gameState.board[ny][nx] === color) {
+                neighbors.push({ x: nx, y: ny });
+            }
+        });
+    });
+    return neighbors;
+}
+
+function findCollateralDamage(coreSet) {
+    const finalSet = new Set(coreSet);
+    coreSet.forEach(coordStr => {
+        const [x, y] = coordStr.split(',').map(Number);
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (isValid(nx, ny) && gameState.board[ny][nx] !== 0) {
+                finalSet.add(`${nx},${ny}`);
+            }
+        });
+    });
+    return finalSet;
+}
+
+function isValid(x, y) {
+    return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT;
+}
+
+function dropFloatingBlocks() {
+    const visited = new Set();
+    const floatingGroups = [];
+    for (let y = 0; y < BOARD_HEIGHT; y++) {
+        for (let x = 0; x < BOARD_WIDTH; x++) {
+            if (gameState.board[y][x] !== 0 && !visited.has(`${x},${y}`)) {
+                const group = findConnectedGroup(x, y, visited);
+                let isSupported = false;
+                for (const cell of group) {
+                    if (cell.y === BOARD_HEIGHT - 1 || (isValid(cell.x, cell.y + 1) && gameState.board[cell.y + 1][cell.x] !== 0 && !group.some(g => g.x === cell.x && g.y === cell.y + 1))) {
+                        isSupported = true;
+                        break;
+                    }
+                }
+                if (!isSupported) floatingGroups.push(group);
+            }
+        }
+    }
+    if (floatingGroups.length > 0) {
+        floatingGroups.forEach(group => {
+            group.forEach(cell => { gameState.board[cell.y][cell.x] = 0; });
+        });
+        floatingGroups.forEach(group => {
+            let dropDistance = 0;
+            let canDrop = true;
+            while (canDrop) {
+                dropDistance++;
+                for (const cell of group) {
+                    const nextY = cell.y + dropDistance;
+                    if (nextY >= BOARD_HEIGHT || (isValid(nextY, cell.x) && gameState.board[nextY][cell.x] !== 0)) {
+                        canDrop = false;
+                        break;
+                    }
+                }
+            }
+            dropDistance--;
+            group.forEach(cell => { gameState.board[cell.y + dropDistance][cell.x] = cell.color; });
+        });
+    }
+}
+
+function findConnectedGroup(startX, startY, visited) {
+    const group = [];
+    const queue = [{ x: startX, y: startY }];
+    visited.add(`${startX},${startY}`);
+    while (queue.length > 0) {
+        const current = queue.shift();
+        current.color = gameState.board[current.y][current.x];
+        group.push(current);
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dx, dy]) => {
+            const neighbor = { x: current.x + dx, y: current.y + dy };
+            const neighborStr = `${neighbor.x},${neighbor.y}`;
+            if (isValid(neighbor.x, neighbor.y) && gameState.board[neighbor.y][neighbor.x] !== 0 && !visited.has(neighborStr)) {
+                visited.add(neighborStr);
+                queue.push(neighbor);
+            }
+        });
+    }
+    return group;
 }
 
 function handleKeydown(event) {
