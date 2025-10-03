@@ -5,15 +5,15 @@ body {
     color: white;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* ★ center から flex-start に変更 */
-    padding-top: 2vh; /* ★ 上部に少し余白を追加 */
+    justify-content: flex-start;
+    padding-top: 2vh;
     align-items: center;
     min-height: 100vh;
     overflow: auto;
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
-    box-sizing: border-box; /* ★ 追加 */
+    box-sizing: border-box;
 }
 
 .hidden {
@@ -185,6 +185,13 @@ body {
 .ranking-container .mode { font-size: 0.8em; margin: 0 1em; color: #999; }
 .ranking-container .score { font-weight: bold; font-size: 1.1em; }
 
+.title-icon {
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: middle;
+    margin-right: 0.5em;
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -275,6 +282,8 @@ body {
 #next-block-canvas {
     background-color: #222;
     border-radius: 5px;
+    width: 60px;
+    height: 60px;
 }
 #back-to-title-btn {
     font-size: 0.9em; background: none; border: 1px solid #888;
