@@ -302,7 +302,7 @@ function placeBlock() {
             });
 
             if (String(gameState.season) === "1") {
-                gameState.score += (sameColorCleared * 500) + (differentColorCleared * 2);
+                gameState.score += (sameColorCleared * 4) + (differentColorCleared * 2);
             } else {
                 gameState.score += (sameColorCleared * 3) + (differentColorCleared * 1);
             }
@@ -487,4 +487,5 @@ function handleKeydown(event) {
     else if (event.key === 'ArrowUp') hardDrop();
     else if (event.key === 'z' || event.key === 'Z') rotateBlock(-1);
     else if (event.key === 'x' || event.key === 'X') rotateBlock(1);
+
 }
