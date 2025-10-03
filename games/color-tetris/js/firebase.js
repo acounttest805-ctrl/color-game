@@ -46,6 +46,29 @@ export async function submitScore(encodedId, playerName, score, mode, season) {
     }
 }
 
+// ★★★ プレイヤーの過去のスコアを取得する関数を新設 ★★★
+export async function getPlayerBestScore(encodedId, season) {
+    if (!db) return null;
+
+    const allTimeCollectionName = season === 0 ? "scores_alltime" : `scores_s${season}_alltime`;
+    const q = query(collection(db, allTimeCollectionName), where("guestId", "==", encodedId));
+
+    try {
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            // このプレイヤーのスコアが1つだけ存在することを前提とする
+            const docData = querySnapshot.docs[0].data();
+            return {
+                name: docData.name,
+                score: docData.score
+            };
+        }
+        return null; // まだスコアがない場合
+    } catch (e) {
+        console.error("Error getting player best score: ", e);
+        return null;
+    }
+}
 
 // --- ランキング取得ロジック (変更なし) ---
 function getWeekId(season) {

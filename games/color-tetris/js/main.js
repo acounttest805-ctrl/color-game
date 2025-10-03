@@ -1,7 +1,7 @@
 // js/main.js
 import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, colorPalettes, blockShapes, CURRENT_SEASON, SEASONS } from './constants.js';
 import { ui } from './ui.js';
-import { initFirebase, submitScore, getRankings } from './firebase.js';
+import { initFirebase, submitScore, getRankings, getPlayerBestScore } from './firebase.js'; 
 import { getGuestUserId } from './crypto.js';
 
 const ctx = ui.canvas.getContext('2d');
@@ -117,6 +117,7 @@ function startGame(mode) {
     gameLoop();
 }
 
+// ★★★ gameOver関数を全面的に書き換え ★★★
 async function gameOver() {
     if (gameState.isGameOver) return;
     gameState.isGameOver = true;
@@ -124,22 +125,46 @@ async function gameOver() {
     cancelAnimationFrame(gameState.animationFrameId);
     gameState.animationFrameId = null;
 
-    const rankings = await getRankings(gameState.season);
-    const lowestAllTime = rankings.allTime.length < 5 ? 0 : rankings.allTime[rankings.allTime.length - 1].score;
-    const lowestWeekly = rankings.weekly.length < 5 ? 0 : rankings.weekly[rankings.weekly.length - 1].score;
+    const encodedId = getGuestUserId();
+    
+    // 自分の過去の最高スコアと、現在のランキングを並行して取得
+    const [playerData, rankings] = await Promise.all([
+        getPlayerBestScore(encodedId, gameState.season),
+        getRankings(gameState.season)
+    ]);
+    
+    const pastBestScore = playerData ? playerData.score : -1;
+    const pastPlayerName = playerData ? playerData.name : "Player";
 
-    if (gameState.score > 0 && (gameState.score > lowestAllTime || gameState.score > lowestWeekly)) {
+    // 今回のスコアが過去のベストスコアより低い場合は、ランクイン判定すらせずに終了
+    if (gameState.score <= pastBestScore) {
+        alert(`ゲームオーバー！\nスコア: ${gameState.score}\nハイスコア: ${pastBestScore}`);
+        showTitleScreen();
+        return;
+    }
+
+    // ランクイン判定
+    const lowestAllTime = rankings.allTime.length < 6 ? 0 : rankings.allTime[rankings.allTime.length - 1].score;
+    const lowestWeekly = rankings.weekly.length < 6 ? 0 : rankings.weekly[rankings.weekly.length - 1].score;
+    
+    const isRankedIn = gameState.score > lowestAllTime || gameState.score > lowestWeekly;
+
+    if (isRankedIn) {
+        // ランクインした場合のみ名前を尋ねる
         const playerName = prompt(
-            `ランキング入り！\nスコア: ${gameState.score}\n\n名前を入力してください (8文字以内):\n(本名などの個人情報は入力しないでください)`,
-            "Player"
+            `ランキング入り！ ハイスコア更新！\nスコア: ${gameState.score}\n\n名前を入力してください (8文字以内):\n(本名などの個人情報は入力しないでください)`,
+            pastPlayerName // ★過去の名前をデフォルト表示
         );
-        if (playerName !== null) {
-            const encodedId = getGuestUserId();
+        
+        if (playerName !== null) { // キャンセルされなかった場合
             await submitScore(encodedId, playerName, gameState.score, gameState.gameMode, gameState.season);
         }
     } else {
-        alert(`ゲームオーバー！\nスコア: ${gameState.score}`);
+        // ランクインしなかったが、自己ベストは更新した場合
+        alert(`ゲームオーバー！ ハイスコア更新！\nスコア: ${gameState.score}`);
+        // ランク外なのでスコアは送信しない
     }
+    
     showTitleScreen();
 }
 
@@ -277,7 +302,7 @@ function placeBlock() {
             });
 
             if (String(gameState.season) === "1") {
-                gameState.score += (sameColorCleared * 4) + (differentColorCleared * 2);
+                gameState.score += (sameColorCleared * 500) + (differentColorCleared * 2);
             } else {
                 gameState.score += (sameColorCleared * 3) + (differentColorCleared * 1);
             }
