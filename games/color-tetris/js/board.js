@@ -1,5 +1,10 @@
 // board.js
 import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE } from './constants.js';
+import { ui } from './ui.js';
+
+function isValid(x, y) {
+    return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT;
+}
 
 export function createEmptyBoard() {
     return Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));
@@ -14,17 +19,11 @@ export function drawBoard(ctx, board, ceilingY) {
             }
         });
     });
-
     if (ceilingY > 0) {
         ctx.fillStyle = '#333';
         ctx.fillRect(0, 0, BOARD_WIDTH * CELL_SIZE, ceilingY * CELL_SIZE);
     }
 }
-
-function isValid(x, y) {
-    return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT;
-}
-
 
 function findSameColorNeighbors(board, coords, color) {
     const neighbors = [];
@@ -77,6 +76,7 @@ function findConnectedGroup(board, startX, startY, visited) {
     return group;
 }
 
+// ★★★ 引数に board を追加 ★★★
 function dropFloatingBlocks(board) {
     const visited = new Set();
     const floatingGroups = [];
@@ -118,40 +118,57 @@ function dropFloatingBlocks(board) {
     }
 }
 
-export function placeBlockOnBoard(board, block) {
+export function placeBlockOnBoard(board, block, season) {
     let score = 0;
-    const placedCoords = [];
     block.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
                 board[block.y + y][block.x + x] = block.color;
-                placedCoords.push({ x: block.x + x, y: block.y + y });
             }
         });
     });
-
-    const sameColorNeighbors = findSameColorNeighbors(board, placedCoords, block.color);
-    if (sameColorNeighbors.length > 0) {
-        const coreClearSet = new Set();
-        placedCoords.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
-        sameColorNeighbors.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
-        const finalClearSet = findCollateralDamage(board, coreClearSet);
-
-        let sameColorCleared = 0;
-        let differentColorCleared = 0;
-        finalClearSet.forEach(coordStr => {
-            const [x, y] = coordStr.split(',').map(Number);
-            if (board[y][x] === block.color) sameColorCleared++;
-            else if (board[y][x] !== 0) differentColorCleared++;
+    
+    if (String(season) === "0" || String(season) === "1") {
+        const placedCoords = [];
+        block.shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value !== 0) placedCoords.push({ x: block.x + x, y: block.y + y });
+            });
         });
-        score = (sameColorCleared * 3) + (differentColorCleared * 1);
-        
-        finalClearSet.forEach(coordStr => {
-            const [x, y] = coordStr.split(',').map(Number);
-            board[y][x] = 0;
-        });
-        
-        dropFloatingBlocks(board);
+        const sameColorNeighbors = findSameColorNeighbors(board, placedCoords, block.color);
+        if (sameColorNeighbors.length > 0) {
+            const coreClearSet = new Set();
+            placedCoords.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
+            sameColorNeighbors.forEach(c => coreClearSet.add(`${c.x},${c.y}`));
+            const finalClearSet = findCollateralDamage(board, coreClearSet);
+            let sameColorCleared = 0, differentColorCleared = 0;
+            finalClearSet.forEach(coordStr => {
+                const [x, y] = coordStr.split(',').map(Number);
+                if (board[y][x] === block.color) sameColorCleared++;
+                else if (board[y][x] !== 0) differentColorCleared++;
+            });
+
+            if (String(season) === "1") {
+                score = (sameColorCleared * 4) + (differentColorCleared * 2);
+            } else {
+                score = (sameColorCleared * 3) + (differentColorCleared * 1);
+            }
+
+            finalClearSet.forEach(coordStr => {
+                const [x, y] = coordStr.split(',').map(Number);
+                board[y][x] = 0;
+            });
+            
+            dropFloatingBlocks(board); // ★★★ 引数を渡す
+
+            const isAllClear = board.every(row => row.every(cell => cell === 0));
+            if (isAllClear) {
+                if (String(season) === "1") {
+                    ui.showAllClearEffect();
+                    score += 300;
+                }
+            }
+        }
     }
     return score;
 }

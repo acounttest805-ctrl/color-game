@@ -1,76 +1,49 @@
 // js/firebase.js
-import { getFirestore, collection, query, orderBy, limit, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let db;
 
-// ★★★ デプロイ後にFirebaseコンソールから取得したURLに必ず書き換えてください ★★★
+// ★★★ デプロイ後にURLを設定してください ★★★
 const SUBMIT_SCORE_URL = "https://submitscore-mlvzsjcxca-an.a.run.app";
+const CHECK_TITLES_URL = "https://asia-northeast1-color-game-5041b.cloudfunctions.net/checkTitles";
 
 export function initFirebase(firestoreInstance) {
     db = firestoreInstance;
 }
 
-// --- スコア送信ロジック (Firebase Functionsを呼び出す) ---
-export async function submitScore(encodedId, playerName, score, mode, season) {
-    if (!encodedId || score <= 0) return;
-
-    // Functionsに送信するデータ
-    const payload = {
-        encodedId: encodedId,
-        playerName: playerName,
-        score: score,
-        mode: mode,
-        season: season
-    };
-
+export async function submitScore(encodedId, playerName, score, mode, season, titleId) {
+    const payload = { encodedId, playerName, score, mode, season, titleId };
     try {
         const response = await fetch(SUBMIT_SCORE_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Score submission failed');
-        }
-        
+        if (!response.ok) throw new Error('Score submission failed');
         const result = await response.json();
         console.log("Functions response:", result.message);
-
     } catch (error) {
         console.error("Error submitting score via Function:", error);
         alert("スコアの送信に失敗しました。");
     }
 }
 
-// ★★★ プレイヤーの過去のスコアを取得する関数を新設 ★★★
-export async function getPlayerBestScore(encodedId, season) {
-    if (!db) return null;
-
-    const allTimeCollectionName = season === 0 ? "scores_alltime" : `scores_s${season}_alltime`;
-    const q = query(collection(db, allTimeCollectionName), where("guestId", "==", encodedId));
-
+export async function checkEligibleTitles(encodedId, completedSeason) {
     try {
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            // このプレイヤーのスコアが1つだけ存在することを前提とする
-            const docData = querySnapshot.docs[0].data();
-            return {
-                name: docData.name,
-                score: docData.score
-            };
-        }
-        return null; // まだスコアがない場合
-    } catch (e) {
-        console.error("Error getting player best score: ", e);
-        return null;
+        const response = await fetch(CHECK_TITLES_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ encodedId, completedSeason }),
+        });
+        if (!response.ok) throw new Error('Failed to check titles');
+        const data = await response.json();
+        return data.titles || [];
+    } catch (error) {
+        console.error("Error checking titles:", error);
+        return [];
     }
 }
 
-// --- ランキング取得ロジック (変更なし) ---
 function getWeekId(season) {
     const now = new Date();
     const timezoneOffset = 9 * 60 * 60 * 1000;
@@ -86,21 +59,15 @@ function getWeekId(season) {
 
 export async function getRankings(season) {
     if (!db) return { allTime: [], weekly: [] };
-    
     const weekId = getWeekId(season);
-
     const allTimeCollectionName = season === 0 ? "scores_alltime" : `scores_s${season}_alltime`;
     const weeklyCollectionName = season === 0 ? "scores_weekly" : `scores_s${season}_weekly`;
-
-    const qAllTime = query(collection(db, allTimeCollectionName), orderBy("score", "desc"), limit(5));
-    const qWeekly = query(collection(db, weeklyCollectionName), where("weekId", "==", weekId), orderBy("score", "desc"), limit(5));
-
+    const qAllTime = query(collection(db, allTimeCollectionName), orderBy("score", "desc"), limit(6));
+    const qWeekly = query(collection(db, weeklyCollectionName), where("weekId", "==", weekId), orderBy("score", "desc"), limit(6));
     try {
         const [allTimeSnapshot, weeklySnapshot] = await Promise.all([getDocs(qAllTime), getDocs(qWeekly)]);
-        
         const allTime = allTimeSnapshot.docs.map(doc => doc.data());
         const weekly = weeklySnapshot.docs.map(doc => doc.data());
-        
         return { allTime, weekly };
     } catch (e) {
         console.error("Error getting rankings: ", e);

@@ -1,18 +1,17 @@
-// block.js
+// js/block.js
 import { BOARD_WIDTH, BOARD_HEIGHT, CELL_SIZE, blockShapes, colorPalettes } from './constants.js';
 
-export function createNewBlock(ceilingY, mode) {
-    const shapeIndex = Math.floor(Math.random() * blockShapes.length);
-    const shapeData = blockShapes[shapeIndex];
-    const colors = colorPalettes[mode];
-    const colorIndex = Math.floor(Math.random() * colors.length);
-    const randomColor = colors[colorIndex];
+// ★★★ season を引数に追加 ★★★
+export function createNewBlock(mode, season) {
+    const colors = colorPalettes[mode][`s${season}`];
+    const shapeData = blockShapes[Math.floor(Math.random() * blockShapes.length)];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
     
     return {
         shape: shapeData.shape,
         color: randomColor,
         x: Math.floor(BOARD_WIDTH / 2) - Math.floor(shapeData.shape[0].length / 2),
-        y: ceilingY
+        y: 0
     };
 }
 
@@ -33,13 +32,15 @@ export function drawBlock(ctx, block) {
 }
 
 export function checkCollision(block, board, ceilingY) {
+    if (!block) return true;
     for (let y = 0; y < block.shape.length; y++) {
         for (let x = 0; x < block.shape[y].length; x++) {
             if (block.shape[y][x] !== 0) {
                 let newX = block.x + x;
                 let newY = block.y + y;
-                if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) return true;
-                if (newY < ceilingY) return true; // 天井に接触した場合も含む
+                if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT || newY < ceilingY) {
+                    return true;
+                }
                 if (board[newY] && board[newY][newX] !== 0) return true;
             }
         }

@@ -1,5 +1,5 @@
 // js/ui.js
-import { CELL_SIZE } from './constants.js';
+import { TITLES } from './constants.js';
 
 export const ui = {
     canvas: document.getElementById('game-board'),
@@ -42,9 +42,14 @@ export const ui = {
         if (data.length === 0) {
             html += '<li>まだランキングがありません。</li>';
         } else {
-            data.forEach((item, index) => {
+            data.slice(0, 5).forEach((item, index) => {
                 const name = item.name ? item.name.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "Anonymous";
-                html += `<li><span class="rank">${index + 1}.</span> <span class="name">${name}</span> <span class="mode">[${item.mode}]</span> <span class="score">${item.score}</span></li>`;
+                let titleHtml = '';
+                if (item.titleId && TITLES[item.titleId]) {
+                    const titleData = TITLES[item.titleId];
+                    titleHtml = `<img src="${titleData.icon}" alt="${titleData.name}" class="title-icon" title="${titleData.name}">`;
+                }
+                html += `<li>${titleHtml}<span class="rank">${index + 1}.</span> <span class="name">${name}</span> <span class="mode">[${item.mode}]</span> <span class="score">${item.score}</span></li>`;
             });
         }
         html += '</ol>';
@@ -56,14 +61,11 @@ export const ui = {
         const width = this.nextBlockCanvas.width;
         const height = this.nextBlockCanvas.height;
         nextCtx.clearRect(0, 0, width, height);
-
         if (!block) return;
-
         const shape = block.shape;
         const blockSize = (shape[0].length > 2 || shape.length > 2) ? 12 : 15;
         const offsetX = (width - shape[0].length * blockSize) / 2;
         const offsetY = (height - shape.length * blockSize) / 2;
-
         nextCtx.fillStyle = block.color;
         shape.forEach((row, y) => {
             row.forEach((value, x) => {
