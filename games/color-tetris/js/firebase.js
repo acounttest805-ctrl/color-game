@@ -4,7 +4,7 @@ import { getFirestore, collection, query, orderBy, limit, getDocs, where } from 
 let db;
 
 // ★★★ デプロイ後にFirebaseコンソールから取得したURLに必ず書き換えてください ★★★
-const SUBMIT_SCORE_URL = "https://asia-northeast1-color-game-5041b.cloudfunctions.net/submitScore";
+const SUBMIT_SCORE_URL = "https://submitscore-mlvzsjcxca-an.a.run.app";
 
 export function initFirebase(firestoreInstance) {
     db = firestoreInstance;
